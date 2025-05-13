@@ -6,9 +6,9 @@
     <title>Tree Path Finder</title>
     <style>
         :root {
-            --primary-color: #5D5CDE;
-            --secondary-color: #4747C6;
-            --accent-color: #7771EE;
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
             --background-color: #f8f9fa;
             --text-color: #333;
             --card-bg: #ffffff;
@@ -20,19 +20,6 @@
             --touch-target-size: 44px;
             --node-radius: 20px;
             --node-radius-mobile: 25px;
-        }
-
-        .dark {
-            --primary-color: #7370F4;
-            --secondary-color: #5856E8;
-            --accent-color: #9D9CF6;
-            --background-color: #181818;
-            --text-color: #f0f0f0;
-            --card-bg: #2a2a2a;
-            --border-color: #444;
-            --muted-text: #aaa;
-            --success-color: #6BCB6F;
-            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -122,10 +109,7 @@
             touch-action: manipulation;
         }
         
-        .dark .control-btn {
-            background: rgba(50, 50, 50, 0.9);
-            color: white;
-        }
+
         
         .control-btn:hover {
             background: var(--primary-color);
@@ -149,10 +133,7 @@
             touch-action: manipulation;
         }
         
-        .dark .zoom-btn {
-            background: rgba(50, 50, 50, 0.9);
-            color: white;
-        }
+
         
         .zoom-btn:hover {
             background: var(--primary-color);
@@ -171,10 +152,7 @@
             justify-content: center;
         }
         
-        .dark .zoom-level {
-            background: rgba(50, 50, 50, 0.9);
-            color: white;
-        }
+
         
         .controls-panel {
             position: absolute;
@@ -191,10 +169,7 @@
             box-shadow: var(--box-shadow);
         }
         
-        .dark .controls-panel {
-            background: rgba(50, 50, 50, 0.9);
-            color: white;
-        }
+
         
         .controls-toggle {
             position: absolute;
@@ -211,11 +186,6 @@
             border-radius: 4px;
             cursor: pointer;
             box-shadow: var(--box-shadow);
-        }
-        
-        .dark .controls-toggle {
-            background: rgba(50, 50, 50, 0.9);
-            color: white;
         }
         
         .hamburger-icon {
@@ -323,10 +293,6 @@
             transition: background-color 0.3s;
         }
 
-        .dark .results {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
         .query-section {
             margin-top: 20px;
             padding: 15px;
@@ -334,10 +300,6 @@
             border-radius: var(--border-radius);
             border-left: 4px solid var(--accent-color);
             transition: background-color 0.3s;
-        }
-
-        .dark .query-section {
-            background: rgba(255, 255, 255, 0.05);
         }
 
         .query-input {
@@ -396,10 +358,6 @@
             margin-bottom: 20px;
             border-left: 4px solid var(--accent-color);
             transition: background-color 0.3s;
-        }
-
-        .dark .instructions {
-            background: rgba(120, 201, 120, 0.05);
         }
 
         .instructions h3 {
@@ -477,10 +435,6 @@
             display: none;
         }
 
-        .dark .node-touch-area {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
         /* Theme Toggle */
         .theme-toggle {
             position: absolute;
@@ -496,6 +450,7 @@
 
         @media (max-width: 992px) {
             .container {
+                padding: 10px;
             }
 
             .button:active {
@@ -516,10 +471,6 @@
                 transition: background-color 0.3s;
             }
 
-            .dark .results {
-                background: rgba(255, 255, 255, 0.05);
-            }
-
             .query-section {
                 margin-top: 20px;
                 padding: 15px;
@@ -527,10 +478,6 @@
                 border-radius: var(--border-radius);
                 border-left: 4px solid var(--accent-color);
                 transition: background-color 0.3s;
-            }
-
-            .dark .query-section {
-                background: rgba(255, 255, 255, 0.05);
             }
 
             .query-input {
@@ -589,10 +536,6 @@
                 margin-bottom: 20px;
                 border-left: 4px solid var(--accent-color);
                 transition: background-color 0.3s;
-            }
-
-            .dark .instructions {
-                background: rgba(120, 201, 120, 0.05);
             }
 
             .instructions h3 {
@@ -702,13 +645,16 @@
                     <li>Click "Analyze Tree" to see the tree structure</li>
                 </ol>
             </div> -->
-            <h2>Controls</h2>
-            <button class="button" id="addNode">Add Node</button>
-            <button class="button" id="connectNodes">Connect Nodes</button>
-            <button class="button" id="editNode">Edit Node</button>
-            <button class="button" id="deleteNode">Delete Node</button>
-            <button class="button" id="clearCanvas">Clear Canvas</button>
-            <button class="button" id="analyzeTree">Analyze Tree</button>
+            <div style="display: none;">
+                <h2>Controls</h2>
+                <button class="button" id="addNode">Add Node</button>
+                <button class="button" id="connectNodes">Connect Nodes</button>
+                <button class="button" id="editNode">Edit Node</button>
+                <button class="button" id="deleteNode">Delete Node</button>
+                <button class="button" id="clearCanvas">Clear Canvas</button>
+                <button class="button" id="analyzeTree">Analyze Tree</button>
+            </div>
+
 
             <div class="results" id="results">
                 <h3>Analysis Results</h3>
@@ -737,7 +683,6 @@
                 <button onclick="window.location.href='Undirected Path Finder.html'">Undirected Path Finder</button>
                 <button onclick="window.location.href='Directed Path Finder.html'">Directed Path Finder</button>
                 <button onclick="window.location.href='Fleury_s Algorithm Path Finder.html'">Fluery's Algorithm Path Finder</button>
-                <button onclick="window.location.href='Tree Path Finder.html'">Tree Path Finder</button>
                 <button onclick="window.location.href='Kruskal_s Path Finder.html'">Kruskal's Path Finder</button>
                 <button onclick="window.location.href='Huffman Algorithm Visualizer.html'">Huffman Algorithm Visualizer</button>
             </div>
@@ -876,25 +821,6 @@
         let touchStartX = 0;
         let touchStartY = 0;
         const touchThreshold = 10;
-
-        // Dark mode detection
-        function setColorMode() {
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.documentElement.classList.add('dark');
-            }
-        }
-
-        // Listen for system color scheme changes
-        if (window.matchMedia) {
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-                if (event.matches) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-                drawTree(); // Redraw tree with new color scheme
-            });
-        }
 
         function adjustCanvasSize() {
             const container = canvas.parentElement;
@@ -1058,13 +984,12 @@
             ctx.translate(panX, panY);
             ctx.scale(zoomLevel, zoomLevel);
             
-            // Use appropriate colors based on dark/light mode
-            const isDarkMode = document.documentElement.classList.contains('dark');
-            const lineColor = isDarkMode ? '#aaa' : '#666';
-            const nodeFillColor = isDarkMode ? '#444' : '#fff';
-            const nodeSelectedColor = isDarkMode ? '#6BCB6F' : '#4CAF50';
-            const nodeTextColor = isDarkMode ? '#fff' : '#000';
-            const nodeStrokeColor = isDarkMode ? '#ccc' : '#000';
+            // Use appropriate colors based on light mode
+            const lineColor = '#666';
+            const nodeFillColor = '#fff';
+            const nodeSelectedColor = '#4CAF50';
+            const nodeTextColor = '#000';
+            const nodeStrokeColor = '#000';
             
             // Draw edges between nodes
             ctx.lineWidth = (window.innerWidth <= 768 ? 3 : 2) / zoomLevel;
