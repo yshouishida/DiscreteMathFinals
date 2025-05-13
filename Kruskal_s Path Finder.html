@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kruskal's Algorithm Visualizer</title>
+  <style>
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --accent-color: #4895ef;
+      --background-color: #f8f9fa;
+      --text-color: #333;
+      --card-bg: #ffffff;
+      --border-radius: 8px;
+      --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --border-color: #ddd;
+      --muted-text: #666;
+      --success-color: #4CAF50;
+      --node-radius: 20px;
+      --node-radius-mobile: 25px;
+      --touch-target-size: 44px;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .main-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .canvas-container {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      padding: 20px;
+      flex: 1;
+      min-width: 300px;
+      position: relative;
+      touch-action: none;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      height: 600px;
+      cursor: move;
+    }
+    
+    canvas {
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+    
+    .mode-indicator {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      z-index: 10;
+      display: none;
+    }
+    
+    .zoom-controls {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      gap: 5px;
+      z-index: 10;
+    }
+    
+    .control-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 18px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    
+    .control-btn:hover {
+      background: var(--primary-color);
+      color: white;
+    }
+    
+    .zoom-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 18px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    
+    .zoom-btn:hover {
+      background: var(--primary-color);
+      color: white;
+    }
+    
+    .zoom-level {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      min-width: 50px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .controls-panel {
+      position: absolute;
+      top: 75px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 4px;
+      padding: 5px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--box-shadow);
+    }
+    
+    .controls-toggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 11;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: var(--box-shadow);
+    }
+    
+    .hamburger-icon {
+      width: 20px;
+      height: 16px;
+      position: relative;
+      transform: rotate(0deg);
+      transition: .5s ease-in-out;
+    }
+    
+    .hamburger-icon span {
+      display: block;
+      position: absolute;
+      height: 3px;
+      width: 100%;
+      background: var(--text-color);
+      border-radius: 3px;
+      opacity: 1;
+      left: 0;
+      transform: rotate(0deg);
+      transition: .25s ease-in-out;
+    }
+    
+    .hamburger-icon span:nth-child(1) {
+      top: 0px;
+    }
+    
+    .hamburger-icon span:nth-child(2) {
+      top: 6px;
+    }
+    
+    .hamburger-icon span:nth-child(3) {
+      top: 12px;
+    }
+    
+    .hamburger-icon.open span:nth-child(1) {
+      top: 6px;
+      transform: rotate(135deg);
+    }
+    
+    .hamburger-icon.open span:nth-child(2) {
+      opacity: 0;
+      left: -60px;
+    }
+    
+    .hamburger-icon.open span:nth-child(3) {
+      top: 6px;
+      transform: rotate(-135deg);
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-size: 2.2rem;
+    }
+    
+    .card {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .card-title {
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+      color: var(--secondary-color);
+      border-bottom: 2px solid var(--accent-color);
+      padding-bottom: 10px;
+    }
+    
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    label {
+      font-weight: 500;
+      margin-right: 5px;
+    }
+    
+    input {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .controls {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      min-width: 300px;
+      flex: 0 0 300px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .button {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 15px 20px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      margin: 8px 0;
+      width: 100%;
+      transition: all 0.2s;
+      font-size: 16px;
+      min-height: var(--touch-target-size);
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .button:hover {
+      background: var(--secondary-color);
+    }
+    
+    .button:active {
+      transform: scale(0.98);
+    }
+    
+    .button:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    button {
+      padding: 10px 16px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: var(--secondary-color);
+    }
+    
+    button.secondary {
+      background-color: #6c757d;
+    }
+    
+    button.secondary:hover {
+      background-color: #5a6268;
+    }
+    
+    button.danger {
+      background-color: #dc3545;
+    }
+    
+    button.danger:hover {
+      background-color: #bd2130;
+    }
+    
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre-wrap;
+      margin-top: 15px;
+      border-left: 4px solid var(--accent-color);
+    }
+    
+    .edges-display {
+      margin-top: 15px;
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .edges-list {
+      list-style-type: none;
+    }
+    
+    .edges-list li {
+      padding: 5px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .steps-output {
+      margin-top: 20px;
+    }
+    
+    .edge-list {
+      list-style-type: none;
+    }
+    
+    .edge-list li {
+      padding: 5px 0;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .edge-actions {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .edge-actions button {
+      padding: 4px 8px;
+      font-size: 0.8rem;
+    }
+    
+    .edit-form {
+      display: none;
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      padding: 20px;
+      margin-bottom: 20px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 100;
+      min-width: 300px;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .main-content {
+        flex-direction: column;
+      }
+      
+      .canvas-container {
+        height: 400px;
+      }
+      
+      .input-group {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      input {
+        width: 100%;
+      }
+      
+      .button-group {
+        flex-direction: column;
+      }
+      
+      .button {
+        padding: 12px 16px;
+        margin: 6px 0;
+        min-height: var(--touch-target-size);
+      }
+      
+      body {
+        padding: 10px;
+      }
+      
+      button {
+        width: 100%;
+      }
+      
+      .controls {
+        display: none;
+      }
+    }
+    
+    /* @media (min-width: 769px) {
+      .controls-toggle, .controls-panel {
+        display: none !important;
+      }
+    } */
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Kruskal's Algorithm Visualizer</h1>
+      <p>Draw a graph and find the Minimum Spanning Tree (MST)</p>
+    </header>
+
+    <div class="main-content">
+      <div class="canvas-container">
+        <div class="mode-indicator" id="modeIndicator"></div>
+        <canvas id="graphCanvas" width="800" height="600"></canvas>
+        <div class="zoom-controls">
+          <div class="zoom-btn" id="zoomIn">+</div>
+          <div class="zoom-level" id="zoomLevel">100%</div>
+          <div class="zoom-btn" id="zoomOut">-</div>
+          <div class="zoom-btn" id="resetView">⟲</div>
+        </div>
+        <div class="controls-toggle" id="controlsToggle">
+          <div class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+        
+        <div class="controls-panel" id="controlsPanel" style="display: none;">
+          <div class="control-btn" id="addVertex" title="Add Vertex">V+</div>
+          <div class="control-btn" id="addEdge" title="Add Edge">E+</div>
+          <div class="control-btn" id="editVertex" title="Edit Vertex">VE</div>
+          <div class="control-btn" id="editEdge" title="Edit Edge">EE</div>
+          <div class="control-btn" id="deleteElement" title="Delete Element">🗑️</div>
+          <div class="control-btn" id="unselectNode" title="Unselect Node">⊘</div>
+          <div class="control-btn" id="clearGraph" title="Clear Graph">🧹</div>
+          <div class="control-btn" id="runKruskal" title="Run Kruskal's Algorithm">▶️</div>
+        </div>
+      </div>
+      
+      <div class="controls">
+        <h2>Controls</h2>
+        <button class="button" id="desktopAddVertex">Add Vertex</button>
+        <button class="button" id="desktopAddEdge">Add Edge</button>
+        <button class="button" id="desktopEditVertex">Edit Vertex</button>
+        <button class="button" id="desktopEditEdge">Edit Edge</button>
+        <button class="button" id="desktopDeleteElement">Delete Element</button>
+        <button class="button" id="desktopUnselectNode">Unselect Node</button>
+        <button class="button" id="desktopClearGraph">Clear Graph</button>
+        <button class="button" id="desktopRunKruskal">Run Kruskal's Algorithm</button>
+
+        <div class="weight-input" id="weightInputContainer" style="display: none;">
+          <h3>Edge Weight</h3>
+          <div class="input-group">
+            <input type="number" id="edgeWeight" placeholder="Enter weight" min="1">
+            <input type="text" id="edgeLabel" placeholder="Label (optional)" maxlength="1">
+            <button id="confirmWeight">Confirm</button>
+            <button id="cancelEdge">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="editForm" class="edit-form">
+      <div class="input-group">
+        <label for="editFrom">From Vertex:</label>
+        <input type="text" id="editFrom" maxlength="2">
+
+        <label for="editTo">To Vertex:</label>
+        <input type="text" id="editTo" maxlength="2">
+
+        <label for="editWeight">Weight:</label>
+        <input type="number" id="editWeight">
+        <label for="editLabel">Label (optional):</label>
+        <input type="text" id="editLabel" maxlength="1">
+      </div>
+      <div class="button-group">
+        <button onclick="saveEditedEdge()">Update Edge</button>
+        <button class="secondary" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Minimum Spanning Tree</h2>
+      <div class="steps-output">
+        <pre id="stepsOutput">The algorithm steps will appear here after running...</pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Navigation</h2>
+      <div class="button-group">
+        <button onclick="window.location.href='Undirected Path Finder.html'">Undirected Path Finder</button>
+        <button onclick="window.location.href='Directed Path Finder.html'">Directed Path Finder</button>
+        <button onclick="window.location.href='Fleury_s Algorithm Path Finder.html'">Fluery's Algorithm Path Finder</button>
+        <button onclick="window.location.href='Tree Path Finder.html'">Tree Path Finder</button>
+        <button onclick="window.location.href='Huffman Algorithm Visualizer.html'">Huffman Algorithm Visualizer</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Graph data structures
+    class Vertex {
+      constructor(id, x, y) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+      }
+    }
+
+    class Edge {
+      constructor(from, to, weight, label = '') {
+        this.from = from;
+        this.to = to;
+        this.weight = weight;
+        this.label = label || '';
+      }
+    }
+
+    class Graph {
+      constructor() {
+        this.vertices = new Map();
+        this.edges = [];
+        this.selectedVertex = null;
+        this.selectedEdge = null;
+        this.tempEdge = null;
+      }
+
+      addVertex(id, x, y) {
+        const vertex = new Vertex(id, x, y);
+        this.vertices.set(id, vertex);
+        return vertex;
+      }
+
+      addEdge(from, to, weight, label = '') {
+        const edge = new Edge(from, to, weight, label);
+        this.edges.push(edge);
+        return edge;
+        isAddingEdge = false;
+      }
+
+      removeVertex(id) {
+        if (!this.vertices.has(id)) return false;
+        
+        // Remove all edges connected to this vertex
+        this.edges = this.edges.filter(edge => edge.from !== id && edge.to !== id);
+        
+        // Remove the vertex
+        this.vertices.delete(id);
+        return true;
+      }
+
+      removeEdge(index) {
+        if (index >= 0 && index < this.edges.length) {
+          this.edges.splice(index, 1);
+          return true;
+        }
+        return false;
+      }
+
+      clear() {
+        this.vertices.clear();
+        this.edges = [];
+        this.selectedVertex = null;
+        this.selectedEdge = null;
+        this.tempEdge = null;
+      }
+
+      getVertexById(id) {
+        return this.vertices.get(id);
+      }
+
+      getVertexIds() {
+        return Array.from(this.vertices.keys());
+      }
+    }
+
+    // Canvas and interaction variables
+    const canvas = document.getElementById('graphCanvas');
+    const ctx = canvas.getContext('2d');
+    const graph = new Graph();
+    let isAddingVertex = false;
+    let isAddingEdge = false;
+    let isEditingVertex = false;
+    let isEditingEdge = false;
+    let isDeletingElement = false;
+    
+    // Variables for zoom and pan functionality
+    let zoomLevel = 1;
+    let panX = 0;
+    let panY = 0;
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    const modeIndicator = document.getElementById('modeIndicator');
+
+    // Touch handling variables
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const touchThreshold = 10;
+
+    // Canvas drawing and interaction functions
+    function adjustCanvasSize() {
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth - 40; // Account for padding
+      canvas.height = container.clientHeight - 40; // Account for padding
+      drawGraph();
+    }
+
+    function updateModeIndicator() {
+      if (isAddingVertex) {
+        modeIndicator.textContent = "Mode: Adding Vertex";
+        modeIndicator.style.display = "block";
+      } else if (isAddingEdge) {
+        modeIndicator.textContent = "Mode: Adding Edge";
+        modeIndicator.style.display = "block";
+      } else if (isEditingVertex) {
+        modeIndicator.textContent = "Mode: Editing Vertex";
+        modeIndicator.style.display = "block";
+      } else if (isEditingEdge) {
+        modeIndicator.textContent = "Mode: Editing Edge";
+        modeIndicator.style.display = "block";
+      } else if (isDeletingElement) {
+        modeIndicator.textContent = "Mode: Deleting Element";
+        modeIndicator.style.display = "block";
+      } else {
+        modeIndicator.style.display = "none";
+      }
+    }
+
+    function handleTouchStart(e) {
+      // Only prevent default if not touching a button
+      if (!e.target.closest('.zoom-btn') && !e.target.closest('.zoom-level')) {
+        e.preventDefault(); // Prevent scrolling when touching the canvas
+        if (e.touches.length === 1) {
+          const touch = e.touches[0];
+          const rect = canvas.getBoundingClientRect();
+          lastX = touch.clientX - rect.left;
+          lastY = touch.clientY - rect.top;
+          touchStartX = lastX;
+          touchStartY = lastY;
+          
+          // If not in vertex/edge adding or editing mode, enable dragging
+          if (!isAddingVertex && !isAddingEdge && !isEditingVertex && !isEditingEdge && !isDeletingElement) {
+            isDragging = true;
+          }
+        }
+      }
+    }
+
+    function handleTouchEnd(e) {
+      if (!e.target.closest('.zoom-btn') && !e.target.closest('.zoom-level')) {
+        e.preventDefault();
+        
+        // If we were dragging, stop dragging and don't trigger interaction
+        if (isDragging && (Math.abs(lastX - touchStartX) > touchThreshold || Math.abs(lastY - touchStartY) > touchThreshold)) {
+          isDragging = false;
+          return;
+        }
+        
+        const touch = e.changedTouches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        // Handle the touch as a click
+        handleCanvasInteraction(x, y);
+      }
+      
+      isDragging = false;
+    }
+
+    function findVertexAt(x, y) {
+      // Apply inverse transformation to get the actual coordinates in the zoomed/panned canvas
+      const transformedX = (x - panX) / zoomLevel;
+      const transformedY = (y - panY) / zoomLevel;
+      
+      // Use a larger touch radius on mobile devices for easier selection
+      const touchRadius = window.innerWidth <= 768 ? 40 : 25;
+      
+      for (const [id, vertex] of graph.vertices) {
+        const dx = vertex.x - transformedX;
+        const dy = vertex.y - transformedY;
+        if (Math.sqrt(dx * dx + dy * dy) < touchRadius) {
+          return vertex;
+        }
+      }
+      return null;
+    }
+
+    function findEdgeAt(x, y) {
+      // Apply inverse transformation to get the actual coordinates in the zoomed/panned canvas
+      const transformedX = (x - panX) / zoomLevel;
+      const transformedY = (y - panY) / zoomLevel;
+      
+      const touchDistance = window.innerWidth <= 768 ? 20 : 10;
+      
+      for (let i = 0; i < graph.edges.length; i++) {
+        const edge = graph.edges[i];
+        const fromVertex = graph.getVertexById(edge.from);
+        const toVertex = graph.getVertexById(edge.to);
+        
+        if (fromVertex && toVertex) {
+          // Calculate distance from point to line segment
+          const distance = distanceToLineSegment(
+            transformedX, transformedY,
+            fromVertex.x, fromVertex.y,
+            toVertex.x, toVertex.y
+          );
+          
+          if (distance < touchDistance) {
+            return { edge, index: i };
+          }
+        }
+      }
+      return null;
+    }
+
+    function distanceToLineSegment(px, py, x1, y1, x2, y2) {
+      const A = px - x1;
+      const B = py - y1;
+      const C = x2 - x1;
+      const D = y2 - y1;
+      
+      const dot = A * C + B * D;
+      const len_sq = C * C + D * D;
+      let param = -1;
+      
+      if (len_sq !== 0) {
+        param = dot / len_sq;
+      }
+      
+      let xx, yy;
+      
+      if (param < 0) {
+        xx = x1;
+        yy = y1;
+      } else if (param > 1) {
+        xx = x2;
+        yy = y2;
+      } else {
+        xx = x1 + param * C;
+        yy = y1 + param * D;
+      }
+      
+      const dx = px - xx;
+      const dy = py - yy;
+      
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function showTouchFeedback(x, y) {
+      // Create a visual feedback element for touch/click
+      const feedback = document.createElement('div');
+      feedback.className = 'node-touch-area';
+      
+      feedback.style.left = `${x}px`;
+      feedback.style.top = `${y}px`;
+      feedback.style.transform = `translate(-50%, -50%)`;
+      feedback.style.display = 'block';
+      feedback.style.position = 'absolute';
+      feedback.style.width = '40px';
+      feedback.style.height = '40px';
+      feedback.style.borderRadius = '50%';
+      feedback.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+      feedback.style.border = '2px solid rgba(76, 175, 80, 0.6)';
+      feedback.style.zIndex = '100';
+      feedback.style.pointerEvents = 'none';
+      
+      canvas.parentElement.appendChild(feedback);
+
+      setTimeout(() => {
+        feedback.remove();
+      }, 300);
+    }
+
+    function drawGraph() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Save the current context state
+      ctx.save();
+      
+      // Apply zoom and pan transformations
+      ctx.translate(panX, panY);
+      ctx.scale(zoomLevel, zoomLevel);
+      
+      // Draw edges
+      ctx.lineWidth = (window.innerWidth <= 768 ? 3 : 2) / zoomLevel;
+      
+      // Draw regular edges
+      for (const edge of graph.edges) {
+        const fromVertex = graph.getVertexById(edge.from);
+        const toVertex = graph.getVertexById(edge.to);
+        
+        if (fromVertex && toVertex) {
+          ctx.beginPath();
+          ctx.moveTo(fromVertex.x, fromVertex.y);
+          ctx.lineTo(toVertex.x, toVertex.y);
+          
+          // Highlight selected edge
+          if (graph.selectedEdge === edge) {
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = (window.innerWidth <= 768 ? 5 : 4) / zoomLevel;
+          } else {
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = (window.innerWidth <= 768 ? 3 : 2) / zoomLevel;
+          }
+          
+          ctx.stroke();
+          
+          // Draw edge weight
+          const midX = (fromVertex.x + toVertex.x) / 2;
+          const midY = (fromVertex.y + toVertex.y) / 2;
+          
+          // Draw a small white background for the weight text
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.beginPath();
+          ctx.arc(midX, midY, 15 / zoomLevel, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw the weight text
+          ctx.fillStyle = '#333';
+          const fontSize = (window.innerWidth <= 768 ? 16 : 14) / zoomLevel;
+          ctx.font = `bold ${fontSize}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(edge.weight + (edge.label ? `(${edge.label})` : ''), midX, midY);
+        }
+      }
+      
+      // Draw temporary edge when adding a new edge
+      if (graph.tempEdge && graph.selectedVertex) {
+        const fromVertex = graph.selectedVertex;
+        
+        ctx.beginPath();
+        ctx.moveTo(fromVertex.x, fromVertex.y);
+        ctx.lineTo(graph.tempEdge.x, graph.tempEdge.y);
+        ctx.strokeStyle = '#4CAF50';
+        ctx.setLineDash([5, 3]);
+        ctx.lineWidth = (window.innerWidth <= 768 ? 3 : 2) / zoomLevel;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      
+      // Draw vertices
+      const baseNodeRadius = window.innerWidth <= 768 ? 25 : 20;
+      const nodeRadius = baseNodeRadius / zoomLevel;
+      
+      for (const [id, vertex] of graph.vertices) {
+        // Draw vertex circle
+        ctx.beginPath();
+        ctx.arc(vertex.x, vertex.y, nodeRadius, 0, Math.PI * 2);
+        
+        // Highlight selected vertex
+        if (graph.selectedVertex === vertex) {
+          ctx.fillStyle = '#4CAF50';
+        } else {
+          ctx.fillStyle = '#fff';
+        }
+        
+        ctx.fill();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = (window.innerWidth <= 768 ? 3 : 2) / zoomLevel;
+        ctx.stroke();
+        
+        // Draw vertex label
+        ctx.fillStyle = '#000';
+        const fontSize = (window.innerWidth <= 768 ? 16 : 14) / zoomLevel;
+        ctx.font = `${fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(id, vertex.x, vertex.y);
+      }
+      
+      // Restore the context state
+      ctx.restore();
+    }
+
+    function handleCanvasInteraction(x, y) {
+      // Apply inverse transformation to get the actual coordinates in the unzoomed/unpanned canvas
+      const transformedX = (x - panX) / zoomLevel;
+      const transformedY = (y - panY) / zoomLevel;
+      
+      if (isAddingVertex) {
+        // Generate a unique vertex ID (A, B, C, etc.)
+        const existingIds = graph.getVertexIds();
+        let newId = '';
+        for (let charCode = 65; charCode <= 90; charCode++) {
+          const id = String.fromCharCode(charCode);
+          if (!existingIds.includes(id)) {
+            newId = id;
+            break;
+          }
+        }
+        
+        if (newId) {
+          // Prompt for vertex name
+          const name = prompt('Enter vertex name (or leave empty to use default):', newId);
+          const vertexId = name && name.trim() ? name.trim() : newId;
+          
+          // Check if the ID is already in use
+          if (vertexId !== newId && graph.vertices.has(vertexId)) {
+            alert('This vertex ID is already in use. Please choose another one.');
+            return;
+          }
+          
+          // Add the new vertex
+          const newVertex = graph.addVertex(vertexId, transformedX, transformedY);
+          
+          // If a vertex is already selected, connect the new vertex to it
+          if (graph.selectedVertex) {
+            // Prompt for weight
+            const weightStr = prompt('Enter edge weight:', '1');
+            const weight = parseInt(weightStr, 10);
+            
+            if (!isNaN(weight) && weight > 0) {
+              // Prompt for optional label
+              const label = prompt('Enter edge label (optional):', '');
+              
+              // Add the edge
+              graph.addEdge(graph.selectedVertex.id, vertexId, weight, label);
+              
+              // Keep the new vertex selected for potential further connections
+              graph.selectedVertex = newVertex;
+            } else {
+              alert('Please enter a valid positive weight.');
+              // Still select the new vertex even if edge creation failed
+              graph.selectedVertex = newVertex;
+            }
+          } else {
+            // Select the new vertex
+            graph.selectedVertex = newVertex;
+          }
+          
+          // Reset the mode after adding a vertex
+          isAddingVertex = false;
+          updateModeIndicator();
+          drawGraph();
+        } else {
+          alert('Maximum number of vertices reached (26).');
+          isAddingVertex = false;
+          updateModeIndicator();
+        }
+      } else if (isAddingEdge) {
+        const clickedVertex = findVertexAt(x, y);
+        
+        if (clickedVertex) {
+          showTouchFeedback(x, y);
+          
+          if (!graph.selectedVertex) {
+            // First vertex selection
+            graph.selectedVertex = clickedVertex;
+            graph.tempEdge = { x: transformedX, y: transformedY };
+            drawGraph();
+          } else if (graph.selectedVertex !== clickedVertex) {
+            // Second vertex selection - prompt for weight directly
+            const weightStr = prompt('Enter edge weight:', '1');
+            const weight = parseInt(weightStr, 10);
+            
+            if (!isNaN(weight) && weight > 0) {
+              // Prompt for optional label@
+              const label = prompt('Enter edge label (optional):', '');
+              
+              // Add the edge
+              graph.addEdge(graph.selectedVertex.id, clickedVertex.id, weight, label);
+              
+              // Keep the second vertex selected for potential further connections
+              graph.selectedVertex = clickedVertex;
+              graph.tempEdge = null;
+              drawGraph();
+              isAddingEdge = false;
+              updateModeIndicator();
+            } else {
+              alert('Please enter a valid positive weight.');
+            }
+          }
+        } else if (graph.selectedVertex) {
+          // Update the temporary edge endpoint when moving the mouse/touch
+          graph.tempEdge = { x: transformedX, y: transformedY };
+          drawGraph();
+          isAddingEdge = false;
+          updateModeIndicator();
+        }
+      } else if (isEditingVertex) {
+        const clickedVertex = findVertexAt(x, y);
+        
+        if (clickedVertex) {
+          showTouchFeedback(x, y);
+          
+          const newId = prompt('Enter new vertex ID:', clickedVertex.id);
+          if (newId && newId.trim() && newId !== clickedVertex.id) {
+            // Check if the new ID is already in use
+            if (graph.vertices.has(newId)) {
+              alert('This ID is already in use. Please choose another one.');
+              return;
+            }
+            
+            // Update all edges that reference this vertex
+            for (const edge of graph.edges) {
+              if (edge.from === clickedVertex.id) {
+                edge.from = newId;
+              }
+              if (edge.to === clickedVertex.id) {
+                edge.to = newId;
+              }
+            }
+            
+            // Create a new vertex with the new ID and same coordinates
+            const newVertex = graph.addVertex(newId, clickedVertex.x, clickedVertex.y);
+            
+            // Remove the old vertex
+            graph.vertices.delete(clickedVertex.id);
+            
+            // Update selected vertex if needed
+            if (graph.selectedVertex === clickedVertex) {
+              graph.selectedVertex = newVertex;
+            }
+            
+            drawGraph();
+          }
+          
+          isEditingVertex = false;
+          updateModeIndicator();
+        }
+      } else if (isEditingEdge) {
+        const edgeInfo = findEdgeAt(x, y);
+        
+        if (edgeInfo) {
+          showTouchFeedback(x, y);
+          
+          const { edge, index } = edgeInfo;
+          const newWeight = prompt('Enter new weight:', edge.weight);
+          
+          if (newWeight && !isNaN(parseInt(newWeight, 10))) {
+            const newLabel = prompt('Enter new label (optional):', edge.label);
+            edge.weight = parseInt(newWeight, 10);
+            edge.label = newLabel || '';
+            drawGraph();
+          }
+          
+          isEditingEdge = false;
+          updateModeIndicator();
+        }
+      } else if (isDeletingElement) {
+        // First check if we clicked on a vertex
+        const clickedVertex = findVertexAt(x, y);
+        
+        if (clickedVertex) {
+          showTouchFeedback(x, y);
+          
+          if (confirm(`Delete vertex ${clickedVertex.id} and all connected edges?`)) {
+            graph.removeVertex(clickedVertex.id);
+            
+            if (graph.selectedVertex === clickedVertex) {
+              graph.selectedVertex = null;
+            }
+            
+            drawGraph();
+          }
+          
+          isDeletingElement = false;
+          updateModeIndicator();
+          return;
+        }
+        
+        // If not a vertex, check if we clicked on an edge
+        const edgeInfo = findEdgeAt(x, y);
+        
+        if (edgeInfo) {
+          showTouchFeedback(x, y);
+          
+          const { edge, index } = edgeInfo;
+          
+          if (confirm(`Delete edge from ${edge.from} to ${edge.to} with weight ${edge.weight}${edge.label ? ` (${edge.label})` : ''}?`)) {
+            graph.removeEdge(index);
+            
+            if (graph.selectedEdge === edge) {
+              graph.selectedEdge = null;
+            }
+            
+            drawGraph();
+          }
+          
+          isDeletingElement = false;
+          updateModeIndicator();
+        }
+      } else {
+        // Normal mode - select vertex or edge
+        const clickedVertex = findVertexAt(x, y);
+        
+        if (clickedVertex) {
+          showTouchFeedback(x, y);
+          graph.selectedVertex = clickedVertex;
+          graph.selectedEdge = null;
+          drawGraph();
+          return;
+        }
+        
+        const edgeInfo = findEdgeAt(x, y);
+        
+        if (edgeInfo) {
+          showTouchFeedback(x, y);
+          graph.selectedEdge = edgeInfo.edge;
+          graph.selectedVertex = null;
+          drawGraph();
+          return;
+        }
+        
+        // If clicking on empty space, deselect everything
+        if (graph.selectedVertex || graph.selectedEdge) {
+          graph.selectedVertex = null;
+          graph.selectedEdge = null;
+          drawGraph();
+        }
+      }
+    }
+
+    // Toggle controls panel
+    document.getElementById('controlsToggle').addEventListener('click', () => {
+      const panel = document.getElementById('controlsPanel');
+      const hamburger = document.querySelector('.hamburger-icon');
+      
+      if (panel.style.display === 'none') {
+        panel.style.display = 'flex';
+        hamburger.classList.add('open');
+      } else {
+        panel.style.display = 'none';
+        hamburger.classList.remove('open');
+      }
+    });
+    
+    // Event handlers for buttons and canvas
+    // Mobile controls
+    document.getElementById('addVertex').addEventListener('click', () => {
+      isAddingVertex = true;
+      isAddingEdge = false;
+      isEditingVertex = false;
+      isEditingEdge = false;
+      isDeletingElement = false;
+      // Keep the selected vertex for connecting the new vertex
+      graph.selectedEdge = null;
+      canvas.style.cursor = 'crosshair';
+      updateModeIndicator();
+    });
+
+    document.getElementById('addEdge').addEventListener('click', () => {
+      isAddingVertex = false;
+      isAddingEdge = true;
+      isEditingVertex = false;
+      isEditingEdge = false;
+      isDeletingElement = false;
+      // Keep the selected vertex for connecting to another vertex
+      graph.selectedEdge = null;
+      graph.tempEdge = null;
+      canvas.style.cursor = 'pointer';
+      updateModeIndicator();
+    });
+
+    document.getElementById('editVertex').addEventListener('click', () => {
+      isAddingVertex = false;
+      isAddingEdge = false;
+      isEditingVertex = true;
+      isEditingEdge = false;
+      isDeletingElement = false;
+      graph.selectedVertex = null;
+      graph.selectedEdge = null;
+      canvas.style.cursor = 'pointer';
+      updateModeIndicator();
+    });
+
+    document.getElementById('editEdge').addEventListener('click', () => {
+      isAddingVertex = false;
+      isAddingEdge = false;
+      isEditingVertex = false;
+      isEditingEdge = true;
+      isDeletingElement = false;
+      graph.selectedVertex = null;
+      graph.selectedEdge = null;
+      canvas.style.cursor = 'pointer';
+      updateModeIndicator();
+    });
+
+    document.getElementById('deleteElement').addEventListener('click', () => {
+      isAddingVertex = false;
+      isAddingEdge = false;
+      isEditingVertex = false;
+      isEditingEdge = false;
+      isDeletingElement = true;
+      graph.selectedVertex = null;
+      graph.selectedEdge = null;
+      canvas.style.cursor = 'pointer';
+      updateModeIndicator();
+    });
+
+    document.getElementById('unselectNode').addEventListener('click', () => {
+      isAddingVertex = false;
+      isAddingEdge = false;
+      isEditingVertex = false;
+      isEditingEdge = false;
+      isDeletingElement = false;
+      graph.selectedVertex = null;
+      graph.selectedEdge = null;
+      canvas.style.cursor = 'default';
+      updateModeIndicator();
+      drawGraph();
+    });
+
+    document.getElementById('clearGraph').addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear the entire graph?')) {
+        graph.clear();
+        isAddingVertex = false;
+        isAddingEdge = false;
+        isEditingVertex = false;
+        isEditingEdge = false;
+        isDeletingElement = false;
+        updateModeIndicator();
+        drawGraph();
+        document.getElementById('stepsOutput').textContent = 'The algorithm steps will appear here after running...';
+      }
+    });
+
+    document.getElementById('confirmWeight').addEventListener('click', () => {
+      const weightInput = document.getElementById('edgeWeight');
+      const labelInput = document.getElementById('edgeLabel');
+      const weight = parseInt(weightInput.value.trim(), 10);
+      const label = labelInput.value.trim();
+
+      if (isNaN(weight) || weight <= 0) {
+        alert('Please enter a valid positive weight.');
+        return;
+      }
+
+      if (graph.tempEdge && graph.tempEdge.from && graph.tempEdge.to) {
+        // Add the edge to the graph
+        graph.addEdge(graph.tempEdge.from, graph.tempEdge.to, weight, label);
+        
+        // Reset selection state
+        graph.selectedVertex = null;
+        graph.tempEdge = null;
+        isAddingEdge = false;
+        updateModeIndicator();
+        
+        // Redraw the graph with the new edge
+        drawGraph();
+
+        // Clear and hide the weight input
+        weightInput.value = '';
+        labelInput.value = '';
+        document.getElementById('weightInputContainer').style.display = 'none';
+      } else {
+        console.log('Error: tempEdge data is incomplete', graph.tempEdge);
+      }
+    });
+
+    document.getElementById('cancelEdge').addEventListener('click', () => {
+      graph.selectedVertex = null;
+      graph.tempEdge = null;
+      isAddingEdge = false;
+      updateModeIndicator();
+      drawGraph();
+
+      // Clear and hide the weight input
+      document.getElementById('edgeWeight').value = '';
+      document.getElementById('edgeLabel').value = '';
+      document.getElementById('weightInputContainer').style.display = 'none';
+    });
+
+    // Canvas event listeners
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener('click', (e) => {
+      if (!isDragging) { // Only handle click if we're not dragging
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        handleCanvasInteraction(x, y);
+      }
+    });
+
+    // Mouse events for panning
+    canvas.addEventListener('mousedown', (e) => {
+      if (!isAddingVertex && !isAddingEdge && !isEditingVertex && !isEditingEdge && !isDeletingElement) {
+        isDragging = true;
+        lastX = e.clientX - canvas.getBoundingClientRect().left;
+        lastY = e.clientY - canvas.getBoundingClientRect().top;
+        canvas.style.cursor = 'grabbing';
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const x = e.clientX - canvas.getBoundingClientRect().left;
+        const y = e.clientY - canvas.getBoundingClientRect().top;
+        const deltaX = x - lastX;
+        const deltaY = y - lastY;
+        panX += deltaX;
+        panY += deltaY;
+        lastX = x;
+        lastY = y;
+        drawGraph();
+      } else if (isAddingEdge && graph.selectedVertex) {
+        // Update the temporary edge endpoint when moving the mouse
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const transformedX = (x - panX) / zoomLevel;
+        const transformedY = (y - panY) / zoomLevel;
+        graph.tempEdge = { x: transformedX, y: transformedY };
+        drawGraph();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+      if (!isAddingVertex && !isAddingEdge && !isEditingVertex && !isEditingEdge && !isDeletingElement) {
+        canvas.style.cursor = 'move';
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isDragging = false;
+      if (!isAddingVertex && !isAddingEdge && !isEditingVertex && !isEditingEdge && !isDeletingElement) {
+        canvas.style.cursor = 'move';
+      }
+    });
+
+    // Touch events for panning
+    canvas.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches.length === 1) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const x = touch.clientX - canvas.getBoundingClientRect().left;
+        const y = touch.clientY - canvas.getBoundingClientRect().top;
+        const deltaX = x - lastX;
+        const deltaY = y - lastY;
+        panX += deltaX;
+        panY += deltaY;
+        lastX = x;
+        lastY = y;
+        drawGraph();
+        
+        // If the user has moved significantly, mark as a drag operation
+        if (Math.abs(x - touchStartX) > touchThreshold || Math.abs(y - touchStartY) > touchThreshold) {
+          isDragging = true;
+        }
+      } else if (isAddingEdge && graph.selectedVertex && e.touches.length === 1) {
+        e.preventDefault();
+        // Update the temporary edge endpoint when moving the touch
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        const transformedX = (x - panX) / zoomLevel;
+        const transformedY = (y - panY) / zoomLevel;
+        graph.tempEdge = { x: transformedX, y: transformedY };
+        drawGraph();
+      }
+    }, { passive: false });
+
+    // Zoom controls
+    document.getElementById('zoomIn').addEventListener('click', (e) => {
+      e.preventDefault();
+      zoomLevel = Math.min(zoomLevel * 1.2, 5);
+      document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+      drawGraph();
+    });
+
+    document.getElementById('zoomOut').addEventListener('click', (e) => {
+      e.preventDefault();
+      zoomLevel = Math.max(zoomLevel / 1.2, 0.2);
+      document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+      drawGraph();
+    });
+
+    document.getElementById('resetView').addEventListener('click', (e) => {
+      e.preventDefault();
+      zoomLevel = 1;
+      panX = 0;
+      panY = 0;
+      document.getElementById('zoomLevel').textContent = '100%';
+      drawGraph();
+    });
+
+    // Kruskal's Algorithm Implementation
+    document.getElementById('runKruskal').addEventListener('click', () => {
+      runKruskal();
+    });
+    
+    // Desktop controls event handlers
+    document.getElementById('desktopAddVertex').addEventListener('click', () => {
+      isAddingVertex = true;
+      isAddingEdge = false;
+      isEditingVertex = false;
+      isEditingEdge = false;
+      isDeletingElement = false;
+      // Keep the selected vertex for connecting the new vertex
+      graph.selectedEdge = null;
+      canvas.style.cursor = 'crosshair';
+      updateModeIndicator();
+    });
+
+    document.getElementById('desktopAddEdge').addEventListener('click', () => {
+      isAddingVertex = false;
+      isAddingEdge = true;
+      isEditingVertex = false;
+      isEditingEdge = false;
+      isDeletingElement = false;
+      // Keep the selected vertex for connecting to another vertex
+      graph.selectedEdge = null;
+      graph.tempEdge = null;
+      canvas.style.cursor = 'pointer';
+      updateModeIndicator();
+    });
+
+    document.getElementById('desktopEditVertex').addEventListener('click', () => {
+      isAddingVertex = false;
+      isAddingEdge = false;
+      isEditingVertex = true;
+      isEditingEdge = false;
+      isDeletingElement = false;
+      graph.selectedVertex = null;
+      graph.selectedEdge = null;
+      canvas.style.cursor = 'pointer';
+      updateModeIndicator();
+    });
+
+    document.getElementById('desktopEditEdge').addEventListener('click', () => {
+      isAddingVertex = false;
+      isAddingEdge = false;
+      isEditingVertex = false;
+      isEditingEdge = true;
+      isDeletingElement = false;
+      graph.selectedVertex = null;
+      graph.selectedEdge = null;
+      canvas.style.cursor = 'pointer';
+      updateModeIndicator();
+    });
+
+    document.getElementById('desktopDeleteElement').addEventListener('click', () => {
+      isAddingVertex = false;
+      isAddingEdge = false;
+      isEditingVertex = false;
+      isEditingEdge = false;
+      isDeletingElement = true;
+      graph.selectedVertex = null;
+      graph.selectedEdge = null;
+      canvas.style.cursor = 'pointer';
+      updateModeIndicator();
+    });
+
+    document.getElementById('desktopUnselectNode').addEventListener('click', () => {
+      isAddingVertex = false;
+      isAddingEdge = false;
+      isEditingVertex = false;
+      isEditingEdge = false;
+      isDeletingElement = false;
+      graph.selectedVertex = null;
+      graph.selectedEdge = null;
+      canvas.style.cursor = 'default';
+      updateModeIndicator();
+      drawGraph();
+    });
+
+    document.getElementById('desktopClearGraph').addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear the entire graph?')) {
+        graph.clear();
+        isAddingVertex = false;
+        isAddingEdge = false;
+        isEditingVertex = false;
+        isEditingEdge = false;
+        isDeletingElement = false;
+        updateModeIndicator();
+        drawGraph();
+        document.getElementById('stepsOutput').textContent = 'The algorithm steps will appear here after running...';
+      }
+    });
+
+    document.getElementById('desktopRunKruskal').addEventListener('click', () => {
+      runKruskal();
+    });
+    
+    // End of desktop controls
+
+    function runKruskal() {
+      if (graph.edges.length === 0) {
+        alert('Please add edges to the graph first.');
+        return;
+      }
+
+      const steps = [];
+      const sortedEdges = [...graph.edges].sort((a, b) => {
+        if (a.weight === b.weight) {
+          return (a.label || '').localeCompare(b.label || '');
+        }
+        return a.weight - b.weight;
+      });
+
+      const parent = {};
+      const rank = {};
+      let mstWeight = 0;
+      const mstEdges = [];
+
+      // Initialize disjoint set for all vertices
+      for (const [id, vertex] of graph.vertices) {
+        parent[id] = id;
+        rank[id] = 0;
+      }
+
+      function find(vertex) {
+        if (parent[vertex] !== vertex) {
+          parent[vertex] = find(parent[vertex]);
+        }
+        return parent[vertex];
+      }
+
+      function union(vertex1, vertex2) {
+        const root1 = find(vertex1);
+        const root2 = find(vertex2);
+
+        if (root1 !== root2) {
+          if (rank[root1] > rank[root2]) {
+            parent[root2] = root1;
+          } else if (rank[root1] < rank[root2]) {
+            parent[root1] = root2;
+          } else {
+            parent[root2] = root1;
+            rank[root1]++;
+          }
+        }
+      }
+
+      // Format the weights array for the first step
+      const weightLabels = sortedEdges.map(e => e.weight + (e.label ? `(${e.label})` : ''));
+      steps.push(`i = 0 W = [${weightLabels.join(', ')}] E = [ ]`);
+
+      // Apply Kruskal's algorithm
+      for (const edge of sortedEdges) {
+        const { from, to, weight, label } = edge;
+        if (find(from) !== find(to)) {
+          union(from, to);
+          const edgeLabel = weight + (label ? `(${label})` : '');
+          mstEdges.push(edgeLabel);
+          mstWeight += weight;
+          steps.push(`E = [${mstEdges.join(', ')}]`);
+          
+          // Highlight the MST edges in the graph
+          edge.inMST = true;
+        }
+      }
+
+      steps.push(`MST = ${mstWeight}`);
+      document.getElementById('stepsOutput').textContent = steps.join('\n\n');
+      
+      // Highlight the MST edges in the graph
+      drawGraphWithMST(sortedEdges.filter(e => e.inMST));
+    }
+
+    function drawGraphWithMST(mstEdges) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Save the current context state
+      ctx.save();
+      
+      // Apply zoom and pan transformations
+      ctx.translate(panX, panY);
+      ctx.scale(zoomLevel, zoomLevel);
+      
+      // Draw edges
+      ctx.lineWidth = (window.innerWidth <= 768 ? 3 : 2) / zoomLevel;
+      
+      // Draw regular edges (non-MST)
+      for (const edge of graph.edges) {
+        const fromVertex = graph.getVertexById(edge.from);
+        const toVertex = graph.getVertexById(edge.to);
+        
+        if (fromVertex && toVertex) {
+          ctx.beginPath();
+          ctx.moveTo(fromVertex.x, fromVertex.y);
+          ctx.lineTo(toVertex.x, toVertex.y);
+          
+          // Check if this edge is in the MST
+          const isInMST = mstEdges.some(e => e.from === edge.from && e.to === edge.to);
+          
+          if (isInMST) {
+            // MST edge - highlight in green
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = (window.innerWidth <= 768 ? 5 : 4) / zoomLevel;
+          } else {
+            // Non-MST edge - show in gray and dashed
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = (window.innerWidth <= 768 ? 2 : 1.5) / zoomLevel;
+            ctx.setLineDash([5, 3]);
+          }
+          
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // Draw edge weight
+          const midX = (fromVertex.x + toVertex.x) / 2;
+          const midY = (fromVertex.y + toVertex.y) / 2;
+          
+          // Draw a small white background for the weight text
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.beginPath();
+          ctx.arc(midX, midY, 15 / zoomLevel, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw the weight text
+          ctx.fillStyle = isInMST ? '#4CAF50' : '#333';
+          const fontSize = (window.innerWidth <= 768 ? 16 : 14) / zoomLevel;
+          ctx.font = `bold ${fontSize}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(edge.weight + (edge.label ? `(${edge.label})` : ''), midX, midY);
+        }
+      }
+      
+      // Draw vertices
+      const baseNodeRadius = window.innerWidth <= 768 ? 25 : 20;
+      const nodeRadius = baseNodeRadius / zoomLevel;
+      
+      for (const [id, vertex] of graph.vertices) {
+        // Draw vertex circle
+        ctx.beginPath();
+        ctx.arc(vertex.x, vertex.y, nodeRadius, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = (window.innerWidth <= 768 ? 3 : 2) / zoomLevel;
+        ctx.stroke();
+        
+        // Draw vertex label
+        ctx.fillStyle = '#000';
+        const fontSize = (window.innerWidth <= 768 ? 16 : 14) / zoomLevel;
+        ctx.font = `${fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(id, vertex.x, vertex.y);
+      }
+      
+      // Restore the context state
+      ctx.restore();
+    }
+
+    // Initialize the canvas and graph
+    window.addEventListener('resize', () => {
+      adjustCanvasSize();
+    });
+
+    // Initialize
+    adjustCanvasSize();
+    canvas.style.cursor = 'move';
+
+    // Add a few sample vertices and edges to demonstrate
+    graph.addVertex('A', 100, 100);
+    graph.addVertex('B', 300, 100);
+    graph.addVertex('C', 200, 250);
+    graph.addVertex('D', 400, 250);
+    graph.addEdge('A', 'B', 10);
+    graph.addEdge('A', 'C', 15);
+    graph.addEdge('B', 'D', 12);
+    graph.addEdge('C', 'D', 8);
+    graph.addEdge('B', 'C', 5);
+    drawGraph();
+  </script>
+  
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Directed Path Finder</title>
+  <style>
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --accent-color: #4895ef;
+      --background-color: #f8f9fa;
+      --text-color: #333;
+      --card-bg: #ffffff;
+      --border-radius: 8px;
+      --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      font-size: 2.2rem;
+    }
+    
+    .card {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .card-title {
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+      color: var(--secondary-color);
+      border-bottom: 2px solid var(--accent-color);
+      padding-bottom: 10px;
+    }
+    
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    label {
+      font-weight: 500;
+      margin-right: 5px;
+    }
+    
+    input {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    
+    input[type="number"] {
+      width: 70px;
+    }
+    
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    button {
+      padding: 10px 16px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: var(--secondary-color);
+    }
+    
+    button.secondary {
+      background-color: #6c757d;
+    }
+    
+    button.secondary:hover {
+      background-color: #5a6268;
+    }
+    
+    button.danger {
+      background-color: #dc3545;
+    }
+    
+    button.danger:hover {
+      background-color: #bd2130;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    
+    th, td {
+      border: 1px solid #ddd;
+      text-align: center;
+      padding: 8px;
+    }
+    
+    th {
+      background-color: #f5f5f5;
+      font-weight: 500;
+    }
+    
+    .matrix-container {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .matrix-box {
+      margin-bottom: 20px;
+    }
+    
+    .edge-list {
+      list-style-type: none;
+      margin: 15px 0;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .edge-list li {
+      padding: 8px;
+      margin-bottom: 5px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      border-left: 3px solid var(--accent-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .edge-actions {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .edge-actions button {
+      padding: 4px 8px;
+      font-size: 0.8rem;
+    }
+
+    .edit-form {
+      background-color: #f0f4f8;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+      display: none;
+    }
+    
+    .paths-container {
+      margin-top: 20px;
+    }
+    
+    .path-group {
+      margin-bottom: 15px;
+    }
+    
+    .path-group h3 {
+      margin-bottom: 10px;
+      color: var(--secondary-color);
+    }
+    
+    .path-item {
+      background-color: #f5f5f5;
+      padding: 8px 12px;
+      margin: 5px 0;
+      border-radius: 4px;
+      border-left: 3px solid var(--accent-color);
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .input-group {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      input[type="number"] {
+        width: 100%;
+      }
+      
+      .button-group {
+        flex-direction: column;
+      }
+      
+      button {
+        width: 100%;
+      }
+      
+      .matrix-container {
+        grid-template-columns: 1fr;
+      }
+      
+      table {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Directed Path Finder</h1>
+    <p>Visualize paths in directed graphs using matrix operations</p>
+  </header>
+
+  <div class="card">
+    <h2 class="card-title">Graph Builder</h2>
+    
+    <div class="input-group">
+      <div>
+        <label for="from">From Vertex:</label>
+        <input type="text" id="from" value="1" placeholder="e.g. 1 or A">
+      </div>
+      
+      <div>
+        <label for="to">To Vertex:</label>
+        <input type="text" id="to" value="1" placeholder="e.g. 1 or B">
+      </div>
+    </div>
+    
+    <div class="button-group">
+      <button onclick="addEdge()">Add Edge</button>
+      <button onclick="findPaths()">Find Paths</button>
+      <button class="danger" onclick="resetMatrix()">Clear Graph</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">Inserted Edges</h2>
+    <ul id="edgeList" class="edge-list">
+      <li>(no edges yet)</li>
+    </ul>
+    <div id="editForm" class="edit-form">
+      <div class="input-group">
+        <label for="editFrom">From:</label>
+        <input type="text" id="editFrom" value="1" placeholder="e.g. 1 or A">
+        <label for="editTo">To:</label>
+        <input type="text" id="editTo" value="1" placeholder="e.g. 1 or B">
+      </div>
+      <div class="button-group">
+        <button onclick="updateEdge()">Update Edge</button>
+        <button class="secondary" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">Matrix Representation</h2>
+    <div class="matrix-container">
+      <div class="matrix-box">
+        <h3>Adjacency Matrix (A)</h3>
+        <div id="matrixA"></div>
+      </div>
+      
+      <div class="matrix-box">
+        <h3>Matrix A² (A × A)</h3>
+        <div id="matrixAA"></div>
+      </div>
+      
+      <div class="matrix-box">
+        <h3>Matrix A³ (A² × A)</h3>
+        <div id="matrixAAA"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">Paths</h2>
+    <div id="paths" class="paths-container"></div>
+  </div>
+  
+  <div class="card">
+    <h2 class="card-title">Navigation</h2>
+    <div class="button-group">
+      <button onclick="window.location.href='Undirected Path Finder.html'">Undirected Path Finder</button>
+      <button onclick="window.location.href='Fleury_s Algorithm Path Finder.html'">Fluery's Algorithm Path Finder</button>
+      <button onclick="window.location.href='Tree Path Finder.html'">Tree Path Finder</button>
+      <button onclick="window.location.href='Kruskal_s Path Finder.html'">Kruskal's Path Finder</button>
+      <button onclick="window.location.href='Huffman Algorithm Visualizer.html'">Huffman Algorithm Visualizer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SIZE = 5;
+  let matrix = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+  let edgeHistory = [];
+  let currentEditIndex = -1;
+  let vertexMap = {}; // Map to store vertex names to indices
+  let nextVertexIndex = 0;
+
+  function getVertexIndex(vertexName) {
+    if (vertexName.trim() === '') return -1;
+    
+    // If this vertex has already been assigned an index, return it
+    if (vertexMap[vertexName] !== undefined) {
+      return vertexMap[vertexName];
+    }
+    
+    // Otherwise, assign a new index if we haven't reached the limit
+    if (nextVertexIndex < SIZE) {
+      vertexMap[vertexName] = nextVertexIndex;
+      return nextVertexIndex++;
+    }
+    
+    // We've reached the maximum number of vertices
+    return -1;
+  }
+
+  function getVertexLabel(index) {
+    // Find the label for this index
+    for (const [label, idx] of Object.entries(vertexMap)) {
+      if (idx === index) return label;
+    }
+    // If no label found, return the numeric index + 1
+    return (index + 1).toString();
+  }
+
+  // Initialize vertexMap with numeric labels 1-5
+  function initializeVertexMap() {
+    for (let i = 1; i <= SIZE; i++) {
+      const label = i.toString();
+      vertexMap[label] = i - 1;
+      nextVertexIndex = Math.max(nextVertexIndex, i);
+    }
+  }
+
+  function addEdge() {
+    const fromValue = document.getElementById("from").value.trim();
+    const toValue = document.getElementById("to").value.trim();
+    
+    if (!fromValue || !toValue) {
+      alert("Please enter values for both vertices.");
+      return;
+    }
+    
+    const fromIndex = getVertexIndex(fromValue);
+    const toIndex = getVertexIndex(toValue);
+    
+    if (fromIndex === -1 || toIndex === -1) {
+      alert("Maximum number of vertices (5) reached. Can't add more unique vertices.");
+      return;
+    }
+    
+    matrix[fromIndex][toIndex]++;
+    edgeHistory.push({
+      text: `Edge added: ${fromValue} → ${toValue}`,
+      from: fromValue,
+      to: toValue,
+      fromIndex: fromIndex,
+      toIndex: toIndex
+    });
+    updateEdgeList();
+    renderAll();
+  }
+
+  function resetMatrix() {
+    matrix = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+    edgeHistory = [];
+    vertexMap = {};
+    nextVertexIndex = 0;
+    document.getElementById("paths").innerHTML = "";
+    updateEdgeList();
+    renderAll();
+    hideEditForm();
+  }
+
+  function updateEdgeList() {
+    const edgeListElement = document.getElementById("edgeList");
+    
+    if (edgeHistory.length === 0) {
+      edgeListElement.innerHTML = "<li>(no edges yet)</li>";
+      return;
+    }
+    
+    let html = "";
+    edgeHistory.forEach((edge, index) => {
+      html += `<li>
+        <span>${edge.text}</span>
+        <div class="edge-actions">
+          <button onclick="editEdge(${index})">Edit</button>
+          <button class="danger" onclick="removeEdge(${index})">Remove</button>
+        </div>
+      </li>`;
+    });
+    
+    edgeListElement.innerHTML = html;
+  }
+
+  function editEdge(index) {
+    const edge = edgeHistory[index];
+    document.getElementById("editFrom").value = edge.from;
+    document.getElementById("editTo").value = edge.to;
+    document.getElementById("editForm").style.display = "block";
+    currentEditIndex = index;
+  }
+
+  function updateEdge() {
+    if (currentEditIndex === -1) return;
+    
+    const oldEdge = edgeHistory[currentEditIndex];
+    const newFrom = document.getElementById("editFrom").value.trim();
+    const newTo = document.getElementById("editTo").value.trim();
+    
+    if (!newFrom || !newTo) {
+      alert("Please enter values for both vertices.");
+      return;
+    }
+    
+    // Get indices for the new vertices
+    let newFromIndex = getVertexIndex(newFrom);
+    let newToIndex = getVertexIndex(newTo);
+    
+    if (newFromIndex === -1 || newToIndex === -1) {
+      alert("Maximum number of vertices (5) reached. Can't add more unique vertices.");
+      return;
+    }
+    
+    // Remove old edge from matrix
+    matrix[oldEdge.fromIndex][oldEdge.toIndex]--;
+    
+    // Add new edge to matrix
+    matrix[newFromIndex][newToIndex]++;
+    
+    // Update edge history
+    edgeHistory[currentEditIndex] = {
+      text: `Edge added: ${newFrom} → ${newTo}`,
+      from: newFrom,
+      to: newTo,
+      fromIndex: newFromIndex,
+      toIndex: newToIndex
+    };
+    
+    updateEdgeList();
+    renderAll();
+    hideEditForm();
+  }
+
+  function removeEdge(index) {
+    const edge = edgeHistory[index];
+    
+    // Remove edge from matrix
+    matrix[edge.fromIndex][edge.toIndex]--;
+    
+    // Remove from history
+    edgeHistory.splice(index, 1);
+    
+    updateEdgeList();
+    renderAll();
+  }
+
+  function cancelEdit() {
+    hideEditForm();
+  }
+
+  function hideEditForm() {
+    document.getElementById("editForm").style.display = "none";
+    currentEditIndex = -1;
+  }
+
+  function multiplyMatrix(m1, m2) {
+    const result = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+    for (let i = 0; i < SIZE; i++) {
+      for (let j = 0; j < SIZE; j++) {
+        for (let k = 0; k < SIZE; k++) {
+          result[i][j] += m1[i][k] * m2[k][j];
+        }
+      }
+    }
+    return result;
+  }
+
+  function renderMatrix(mat, containerId) {
+    let html = '<table><tr><th></th>';
+    // Use vertex labels for headers
+    for (let i = 0; i < SIZE; i++) {
+      if (i < nextVertexIndex) {
+        html += `<th>${getVertexLabel(i)}</th>`;
+      } else {
+        html += `<th>-</th>`;
+      }
+    }
+    html += '</tr>';
+    
+    for (let i = 0; i < SIZE; i++) {
+      if (i < nextVertexIndex) {
+        html += `<tr><th>${getVertexLabel(i)}</th>`;
+        for (let j = 0; j < SIZE; j++) {
+          html += `<td>${mat[i][j]}</td>`;
+        }
+        html += '</tr>';
+      }
+    }
+    html += '</table>';
+    document.getElementById(containerId).innerHTML = html;
+  }
+
+  function renderAll() {
+    renderMatrix(matrix, "matrixA");
+    const AA = multiplyMatrix(matrix, matrix);
+    const AAA = multiplyMatrix(AA, matrix);
+    renderMatrix(AA, "matrixAA");
+    renderMatrix(AAA, "matrixAAA");
+  }
+
+  function dfs(graph, current, target, depth, path, result) {
+    path.push(current + 1);
+    if (depth === 0) {
+      if (current === target) result.push([...path]);
+    } else {
+      for (let next = 0; next < SIZE; next++) {
+        if (graph[current][next] > 0) {
+          for (let count = 0; count < graph[current][next]; count++) {
+            dfs(graph, next, target, depth - 1, path, result);
+          }
+        }
+      }
+    }
+    path.pop();
+  }
+
+  function findPaths() {
+    const fromValue = document.getElementById("from").value.trim();
+    const toValue = document.getElementById("to").value.trim();
+    
+    if (!fromValue || !toValue) {
+      alert("Please enter values for both vertices.");
+      return;
+    }
+    
+    // Get the indices of the vertices
+    let fromIndex = -1;
+    let toIndex = -1;
+    
+    // Try to use existing vertices first
+    for (const [label, idx] of Object.entries(vertexMap)) {
+      if (label === fromValue) fromIndex = idx;
+      if (label === toValue) toIndex = idx;
+    }
+    
+    if (fromIndex === -1 && nextVertexIndex < SIZE) {
+      // Add new vertex if space available
+      fromIndex = nextVertexIndex;
+      vertexMap[fromValue] = nextVertexIndex++;
+    }
+    
+    if (toIndex === -1 && nextVertexIndex < SIZE) {
+      // Add new vertex if space available
+      toIndex = nextVertexIndex;
+      vertexMap[toValue] = nextVertexIndex++;
+    }
+    
+    if (fromIndex === -1 || toIndex === -1) {
+      alert("Maximum number of vertices (5) reached. Can't add more unique vertices.");
+      return;
+    }
+    
+    const output = [];
+
+    for (let len = 1; len <= 3; len++) {
+      const result = [];
+      dfs(matrix, fromIndex, toIndex, len, [], result);
+      output.push({ length: len, paths: result });
+    }
+
+    let html = "";
+    output.forEach(({ length, paths }) => {
+      html += `<div class="path-group">
+                <h3>Paths of Length ${length}:</h3>`;
+      if (paths.length === 0) {
+        html += `<p>(none)</p>`;
+      } else {
+        html += paths.map(p => {
+          // Convert numeric indices to vertex labels
+          const labelPath = p.map(vertexIndex => getVertexLabel(vertexIndex - 1));
+          return `<div class="path-item">${labelPath.join(" → ")}</div>`;
+        }).join('');
+      }
+      html += `</div>`;
+    });
+
+    document.getElementById("paths").innerHTML = html;
+  }
+
+  // Initialize view
+  initializeVertexMap();
+  renderAll();
+  updateEdgeList();
+</script>
+</body>
+</html>

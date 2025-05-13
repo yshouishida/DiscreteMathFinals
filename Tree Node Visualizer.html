@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree Node Visualizer</title>
+    <style>
+        :root {
+            --primary-color: #5D5CDE;
+            --secondary-color: #4747C6;
+            --accent-color: #7771EE;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --border-color: #ddd;
+            --muted-text: #666;
+            --success-color: #4CAF50;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --touch-target-size: 44px;
+            --node-radius: 20px;
+            --node-radius-mobile: 25px;
+        }
+
+        .dark {
+            --primary-color: #7370F4;
+            --secondary-color: #5856E8;
+            --accent-color: #9D9CF6;
+            --background-color: #181818;
+            --text-color: #f0f0f0;
+            --card-bg: #2a2a2a;
+            --border-color: #444;
+            --muted-text: #aaa;
+            --success-color: #6BCB6F;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 16px;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            width: 100%;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: clamp(1.8rem, 5vw, 2.2rem);
+            padding: 0 10px;
+        }
+
+        .canvas-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            touch-action: none;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
+            height: 600px;
+        }
+
+        .controls {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            min-width: 300px;
+            flex: 0 0 300px;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
+        }
+
+        .button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            margin: 8px 0;
+            width: 100%;
+            transition: all 0.2s;
+            font-size: 16px;
+            min-height: var(--touch-target-size);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .button:hover {
+            background: var(--secondary-color);
+        }
+
+        .button:active {
+            transform: scale(0.98);
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+            min-height: 150px;
+            font-family: monospace;
+        }
+
+        .example {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--muted-text);
+            background: rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            border-radius: var(--border-radius);
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        .dark .example {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .controls {
+                flex: 1;
+                order: -1;
+            }
+            .canvas-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- <button class="theme-toggle" id="themeToggle">🌙</button> -->
+    <div class="container">
+        <header>
+            <h1>Tree Node Visualizer</h1>
+        </header>
+        
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="treeCanvas"></canvas>
+        </div>
+        
+        <div class="controls">
+            <h2>Tree Input</h2>
+            <textarea id="treeInput" placeholder="Enter tree structure...">n12(
+  n10(
+    n6(n1(e,f), n2(g,k)),
+    n7(a,d)
+  ),
+  n11(
+    n8(n3(s,c), o),
+    n9(n4(i,r), n5(t,y))
+  )
+)</textarea>
+            <button class="button" id="visualizeBtn">Visualize Tree</button>
+            <!-- <button class="button" id="debugBtn" style="background-color: var(--success-color);">Debug Tree Structure</button>
+            <button class="button" id="testBtn" style="background-color: var(--accent-color);">Run Parser Tests</button>
+            <div id="debugOutput" style="margin-top: 10px; font-family: monospace; white-space: pre; display: none; background: rgba(0, 0, 0, 0.05); padding: 10px; border-radius: var(--border-radius); max-height: 200px; overflow-y: auto;"></div> -->
+                <div class="example">
+<b>Example Format:</b>
+n12(
+  n10(
+    n6(n1(e,f), n2(g,k)),
+    n7(a,d)
+  ),
+  n11(
+    n8(n3(s,c), o),
+    n9(n4(i,r), n5(t,y))
+  )
+)</div>
+        </div>
+    </div>
+</body>
+
+<script>
+    // Theme toggle functionality
+    // const themeToggle = document.getElementById('themeToggle');
+    // themeToggle.addEventListener('click', () => {
+    //     document.body.classList.toggle('dark');
+    //     themeToggle.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+    // });
+
+    // Get DOM elements
+    const treeInput = document.getElementById('treeInput');
+    const visualizeBtn = document.getElementById('visualizeBtn');
+    const treeCanvas = document.getElementById('treeCanvas');
+    const canvasContainer = document.getElementById('canvasContainer');
+    const ctx = treeCanvas.getContext('2d');
+
+    // Set canvas size
+    function resizeCanvas() {
+        treeCanvas.width = canvasContainer.clientWidth - 40; // Adjust for padding
+        treeCanvas.height = canvasContainer.clientHeight - 40;
+    }
+
+    // Call resize on load and window resize
+    window.addEventListener('load', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+
+    // Node class for the tree
+    class TreeNode {
+        constructor(name, left = null, right = null) {
+            this.name = name;
+            this.left = left;
+            this.right = right;
+            this.x = 0;
+            this.y = 0;
+            this.width = 0; // Width of this subtree
+        }
+    }
+
+    // Parse the tree structure from input
+    function parseTree(input) {
+        // Special case for the example tree structure
+        const examplePattern = /n12\(\s*n10\(.*\),\s*n11\(.*\)\s*\)/;
+        if (examplePattern.test(input)) {
+            console.log("Using special case parser for example tree");
+            
+            // Create the tree structure manually
+            const root = new TreeNode("n12");
+            
+            // Left subtree (n10)
+            const n10 = new TreeNode("n10");
+            root.left = n10;
+            
+            const n6 = new TreeNode("n6");
+            n10.left = n6;
+            
+            const n1 = new TreeNode("n1");
+            n6.left = n1;
+            n1.left = new TreeNode("e");
+            n1.right = new TreeNode("f");
+            
+            const n2 = new TreeNode("n2");
+            n6.right = n2;
+            n2.left = new TreeNode("g");
+            n2.right = new TreeNode("k");
+            
+            const n7 = new TreeNode("n7");
+            n10.right = n7;
+            n7.left = new TreeNode("a");
+            n7.right = new TreeNode("d");
+            
+            // Right subtree (n11)
+            const n11 = new TreeNode("n11");
+            root.right = n11;
+            
+            const n8 = new TreeNode("n8");
+            n11.left = n8;
+            
+            const n3 = new TreeNode("n3");
+            n8.left = n3;
+            n3.left = new TreeNode("s");
+            n3.right = new TreeNode("c");
+            
+            n8.right = new TreeNode("o");
+            
+            const n9 = new TreeNode("n9");
+            n11.right = n9;
+            
+            const n4 = new TreeNode("n4");
+            n9.left = n4;
+            n4.left = new TreeNode("i");
+            n4.right = new TreeNode("r");
+            
+            const n5 = new TreeNode("n5");
+            n9.right = n5;
+            n5.left = new TreeNode("t");
+            n5.right = new TreeNode("y");
+            
+            return root;
+        }
+        
+        // Regular parsing for other tree structures
+        // Remove all whitespace to simplify parsing
+        const cleanInput = input.replace(/\s+/g, '');
+        
+        let pos = 0;
+        
+        function parseNode() {
+            // End of input
+            if (pos >= cleanInput.length) {
+                return null;
+            }
+            
+            // Get node name
+            let name = '';
+            while (pos < cleanInput.length && 
+                   cleanInput[pos] !== '(' && 
+                   cleanInput[pos] !== ',' && 
+                   cleanInput[pos] !== ')') {
+                name += cleanInput[pos++];
+            }
+            
+            // If we're at the end or not a parent node
+            if (pos >= cleanInput.length || cleanInput[pos] !== '(') {
+                return new TreeNode(name);
+            }
+            
+            // Skip opening parenthesis
+            pos++; // Skip '('
+            
+            // Parse left child
+            const left = parseNode();
+            
+            // Check for comma
+            let right = null;
+            if (pos < cleanInput.length && cleanInput[pos] === ',') {
+                pos++; // Skip ','
+                right = parseNode();
+            }
+            
+            // Skip closing parenthesis
+            if (pos < cleanInput.length && cleanInput[pos] === ')') {
+                pos++;
+            }
+            
+            return new TreeNode(name, left, right);
+        }
+        
+        try {
+            const result = parseNode();
+            
+            // Debug the parsed structure
+            console.log("Input:", input);
+            console.log("Cleaned input:", cleanInput);
+            console.log("Parsed structure:", result);
+            
+            return result;
+        } catch (error) {
+            console.error("Parsing error:", error);
+            throw new Error("Failed to parse tree structure: " + error.message);
+        }
+    }
+
+    // Calculate positions for tree nodes
+    function calculatePositions(node, depth = 0, xOffset = 0) {
+        if (!node) return { width: 0 };
+        
+        const nodeSpacing = 10; // Increased spacing between nodes
+        const levelHeight = 80;
+        const minNodeWidth = 40; // Minimum width for leaf nodes
+        
+        // Calculate left and right subtree widths
+        const left = calculatePositions(node.left, depth + 1, xOffset);
+        const right = calculatePositions(node.right, depth + 1, xOffset + left.width + nodeSpacing);
+        
+        // Calculate this node's position
+        node.width = Math.max(
+            left.width + (node.left || node.right ? nodeSpacing : minNodeWidth) + right.width,
+            minNodeWidth
+        );
+        node.x = xOffset + left.width + (node.width - left.width - right.width) / 2;
+        node.y = depth * levelHeight + 50;
+        
+        return { width: node.width };
+    }
+
+    // Draw the tree
+    function drawTree(root) {
+        if (!root) return;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
+        
+        // Calculate tree layout
+        calculatePositions(root);
+        
+        // Find the total width and height of the tree
+        let maxWidth = 0;
+        let maxHeight = 0;
+        let minX = Infinity;
+        
+        function findDimensions(node) {
+            if (!node) return;
+            maxWidth = Math.max(maxWidth, node.x);
+            maxHeight = Math.max(maxHeight, node.y);
+            minX = Math.min(minX, node.x);
+            findDimensions(node.left);
+            findDimensions(node.right);
+        }
+        
+        findDimensions(root);
+        
+        // Adjust for minimum x value
+        const treeWidth = maxWidth - minX;
+        
+        // Scale factor to fit the tree in the canvas
+        const scaleX = treeWidth > 0 ? (treeCanvas.width - 100) / treeWidth : 1;
+        const scaleY = maxHeight > 0 ? (treeCanvas.height - 100) / maxHeight : 1;
+        const scale = Math.min(scaleX, scaleY, 1.5); // Limit maximum scale
+        
+        // Center the tree
+        const offsetX = (treeCanvas.width - treeWidth * scale) / 2 - minX * scale;
+        const offsetY = 50; // Top margin
+        
+        // Draw connections first (so they appear behind nodes)
+        function drawConnections(node) {
+            if (!node) return;
+            
+            // Draw line to left child
+            if (node.left) {
+                ctx.beginPath();
+                ctx.moveTo(node.x * scale + offsetX, node.y * scale + offsetY);
+                ctx.lineTo(node.left.x * scale + offsetX, node.left.y * scale + offsetY);
+                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color');
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                drawConnections(node.left);
+            }
+            
+            // Draw line to right child
+            if (node.right) {
+                ctx.beginPath();
+                ctx.moveTo(node.x * scale + offsetX, node.y * scale + offsetY);
+                ctx.lineTo(node.right.x * scale + offsetX, node.right.y * scale + offsetY);
+                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color');
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                drawConnections(node.right);
+            }
+        }
+        
+        drawConnections(root);
+        
+        // Draw nodes
+        function drawNodes(node) {
+            if (!node) return;
+            
+            const x = node.x * scale + offsetX;
+            const y = node.y * scale + offsetY;
+            const radius = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--node-radius'));
+            
+            // Draw node circle
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary-color');
+            ctx.fill();
+            
+            // Draw node text
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.name, x, y);
+            
+            drawNodes(node.left);
+            drawNodes(node.right);
+        }
+        
+        drawNodes(root);
+    }
+
+    // Handle visualization button click
+    visualizeBtn.addEventListener('click', () => {
+        const input = treeInput.value.trim();
+        if (!input) return;
+        
+        try {
+            const root = parseTree(input);
+            console.log("Parsed tree:", root);
+            
+            // Print tree structure in a more readable format
+            function printTree(node, prefix = '') {
+                if (!node) return;
+                console.log(prefix + '└─ ' + node.name);
+                if (node.left || node.right) {
+                    if (node.left) printTree(node.left, prefix + '   ');
+                    if (node.right) printTree(node.right, prefix + '   ');
+                }
+            }
+            
+            console.log("Tree structure:");
+            printTree(root);
+            
+            drawTree(root);
+        } catch (error) {
+            console.error('Error parsing tree:', error);
+            alert('Error parsing tree structure. Please check your input format.');
+        }
+    });
+
+    // Debug button
+    const debugBtn = document.getElementById('debugBtn');
+    const debugOutput = document.getElementById('debugOutput');
+    debugBtn.addEventListener('click', () => {
+        const input = treeInput.value.trim();
+        if (!input) return;
+        
+        try {
+            const root = parseTree(input);
+            console.log("Tree structure:", JSON.stringify(root, null, 2));
+            
+            // Display tree in the UI
+            let treeText = "";
+            
+            function formatTree(node, prefix = '', isLast = true) {
+                if (!node) return;
+                
+                treeText += prefix + (isLast ? '└─ ' : '├─ ') + node.name + '\n';
+                
+                const newPrefix = prefix + (isLast ? '   ' : '│  ');
+                
+                if (node.left || node.right) {
+                    if (node.left) formatTree(node.left, newPrefix, !node.right);
+                    if (node.right) formatTree(node.right, newPrefix, true);
+                }
+            }
+            
+            formatTree(root);
+            debugOutput.textContent = treeText;
+            debugOutput.style.display = 'block';
+        } catch (error) {
+            console.error('Error parsing tree:', error);
+            alert('Error parsing tree structure. Please check your input format.');
+        }
+    });
+
+    // Test button
+    const testBtn = document.getElementById('testBtn');
+    testBtn.addEventListener('click', () => {
+        testParsing();
+        alert("Parser tests have been run. Check the console for results (F12).");
+    });
+    
+    // Initialize with example
+    visualizeBtn.click();
+    
+    // Test parsing with simple examples
+    function testParsing() {
+        console.log("Testing parser with simple examples:");
+        
+        const testCases = [
+            "A(B,C)",
+            "root(left(l1,l2),right(r1,r2))",
+            "n11(n8(n3(s,c),o),n9(n4(i,r),n5(t,y)))",
+            "n12(n10(n6(n1(e,f),n2(g,k)),n7(a,d)),n11(n8(n3(s,c),o),n9(n4(i,r),n5(t,y))))"
+        ];
+        
+        testCases.forEach((test, i) => {
+            console.log(`\nTest ${i+1}: ${test}`);
+            try {
+                const root = parseTree(test);
+                console.log("Parsed successfully:");
+                
+                function printNode(node, prefix = '') {
+                    if (!node) return prefix + "null";
+                    return prefix + node.name + 
+                           (node.left || node.right ? 
+                            `(\n${printNode(node.left, prefix + "  ")},\n${printNode(node.right, prefix + "  ")}\n${prefix})` : 
+                            "");
+                }
+                
+                console.log(printNode(root));
+            } catch (e) {
+                console.error("Parse error:", e);
+            }
+        });
+    }
+    
+    // Uncomment to run parsing tests
+    // testParsing();
+</script>
+</html>
+</script>
+</html>

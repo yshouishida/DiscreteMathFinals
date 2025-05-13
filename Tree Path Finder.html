@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree Path Finder</title>
+    <style>
+        :root {
+            --primary-color: #5D5CDE;
+            --secondary-color: #4747C6;
+            --accent-color: #7771EE;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --border-color: #ddd;
+            --muted-text: #666;
+            --success-color: #4CAF50;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --touch-target-size: 44px;
+            --node-radius: 20px;
+            --node-radius-mobile: 25px;
+        }
+
+        .dark {
+            --primary-color: #7370F4;
+            --secondary-color: #5856E8;
+            --accent-color: #9D9CF6;
+            --background-color: #181818;
+            --text-color: #f0f0f0;
+            --card-bg: #2a2a2a;
+            --border-color: #444;
+            --muted-text: #aaa;
+            --success-color: #6BCB6F;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 16px;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            width: 100%;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: clamp(1.8rem, 5vw, 2.2rem);
+            padding: 0 10px;
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            margin-bottom: 16px;
+            font-size: clamp(1.3rem, 4vw, 1.6rem);
+        }
+
+        .canvas-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            touch-action: none;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
+            height: 600px;
+            cursor: move;
+        }
+        
+        .zoom-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+        
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .dark .control-btn {
+            background: rgba(50, 50, 50, 0.9);
+            color: white;
+        }
+        
+        .control-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .dark .zoom-btn {
+            background: rgba(50, 50, 50, 0.9);
+            color: white;
+        }
+        
+        .zoom-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .zoom-level {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 50px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dark .zoom-level {
+            background: rgba(50, 50, 50, 0.9);
+            color: white;
+        }
+        
+        .controls-panel {
+            position: absolute;
+            top: 75px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 4px;
+            padding: 5px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .dark .controls-panel {
+            background: rgba(50, 50, 50, 0.9);
+            color: white;
+        }
+        
+        .controls-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 11;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .dark .controls-toggle {
+            background: rgba(50, 50, 50, 0.9);
+            color: white;
+        }
+        
+        .hamburger-icon {
+            width: 20px;
+            height: 16px;
+            position: relative;
+            transform: rotate(0deg);
+            transition: .5s ease-in-out;
+        }
+        
+        .hamburger-icon span {
+            display: block;
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background: var(--text-color);
+            border-radius: 3px;
+            opacity: 1;
+            left: 0;
+            transform: rotate(0deg);
+            transition: .25s ease-in-out;
+        }
+        
+        .hamburger-icon span:nth-child(1) {
+            top: 0px;
+        }
+        
+        .hamburger-icon span:nth-child(2) {
+            top: 6px;
+        }
+        
+        .hamburger-icon span:nth-child(3) {
+            top: 12px;
+        }
+        
+        .hamburger-icon.open span:nth-child(1) {
+            top: 6px;
+            transform: rotate(135deg);
+        }
+        
+        .hamburger-icon.open span:nth-child(2) {
+            opacity: 0;
+            left: -60px;
+        }
+        
+        .hamburger-icon.open span:nth-child(3) {
+            top: 6px;
+            transform: rotate(-135deg);
+        }
+
+        canvas {
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .controls {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            min-width: 300px;
+            flex: 0 0 300px;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
+        }
+
+        .button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            margin: 8px 0;
+            width: 100%;
+            transition: all 0.2s;
+            font-size: 16px;
+            min-height: var(--touch-target-size);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .button:hover {
+            background: var(--secondary-color);
+        }
+
+        .button:active {
+            transform: scale(0.98);
+        }
+
+        .button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--accent-color);
+            transition: background-color 0.3s;
+        }
+
+        .dark .results {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .query-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--accent-color);
+            transition: background-color 0.3s;
+        }
+
+        .dark .query-section {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .query-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+        }
+
+        .query-button {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            margin: 5px 0;
+            transition: background-color 0.2s;
+            font-size: 16px;
+            min-height: var(--touch-target-size);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .query-button:hover {
+            background: var(--secondary-color);
+        }
+
+        .query-examples {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--muted-text);
+        }
+
+        .mode-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            display: none;
+            z-index: 1000;
+            font-size: 14px;
+        }
+
+        .instructions {
+            background: rgba(120, 201, 120, 0.15);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            border-left: 4px solid var(--accent-color);
+            transition: background-color 0.3s;
+        }
+
+        .dark .instructions {
+            background: rgba(120, 201, 120, 0.05);
+        }
+
+        .instructions h3 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .button-group button {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 16px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+            min-height: var(--touch-target-size);
+        }
+
+        .button-group button:hover {
+            background: var(--secondary-color);
+        }
+
+        .node-touch-area {
+            position: absolute;
+            width: var(--touch-target-size);
+            height: var(--touch-target-size);
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .dark .node-touch-area {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 24px;
+            z-index: 1000;
+        }
+
+        @media (max-width: 992px) {
+            .container {
+            }
+
+            .button:active {
+                transform: scale(0.98);
+            }
+
+            .button:disabled {
+                background: #cccccc;
+                cursor: not-allowed;
+            }
+
+            .results {
+                margin-top: 20px;
+                padding: 15px;
+                background: rgba(0, 0, 0, 0.05);
+                border-radius: var(--border-radius);
+                border-left: 4px solid var(--accent-color);
+                transition: background-color 0.3s;
+            }
+
+            .dark .results {
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            .query-section {
+                margin-top: 20px;
+                padding: 15px;
+                background: rgba(0, 0, 0, 0.05);
+                border-radius: var(--border-radius);
+                border-left: 4px solid var(--accent-color);
+                transition: background-color 0.3s;
+            }
+
+            .dark .query-section {
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            .query-input {
+                width: 100%;
+                padding: 12px;
+                margin: 10px 0;
+                border: 1px solid var(--border-color);
+                border-radius: var(--border-radius);
+                font-size: 16px;
+                background-color: var(--card-bg);
+                color: var(--text-color);
+                transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+            }
+
+            .query-button {
+                background: var(--accent-color);
+                color: white;
+                border: none;
+                padding: 15px 20px;
+                border-radius: var(--border-radius);
+                cursor: pointer;
+                margin: 5px 0;
+                transition: background-color 0.2s;
+                font-size: 16px;
+                min-height: var(--touch-target-size);
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .query-button:hover {
+                background: var(--secondary-color);
+            }
+
+            .query-examples {
+                margin-top: 10px;
+                font-size: 0.9em;
+                color: var(--muted-text);
+            }
+
+            .mode-indicator {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                background: var(--accent-color);
+                color: white;
+                padding: 8px 15px;
+                border-radius: var(--border-radius);
+                display: none;
+                z-index: 1000;
+                font-size: 14px;
+            }
+
+            .instructions {
+                background: rgba(120, 201, 120, 0.15);
+                padding: 15px;
+                border-radius: var(--border-radius);
+                margin-bottom: 20px;
+                border-left: 4px solid var(--accent-color);
+                transition: background-color 0.3s;
+            }
+
+            .dark .instructions {
+                background: rgba(120, 201, 120, 0.05);
+            }
+
+            .instructions h3 {
+                color: var(--secondary-color);
+                margin-bottom: 10px;
+            }
+
+            .instructions ol {
+                padding-left: 20px;
+            }
+
+            .instructions li {
+                margin-bottom: 5px;
+            }
+
+            .card {
+                background-color: var(--card-bg);
+                border-radius: var(--border-radius);
+                box-shadow: var(--box-shadow);
+                padding: 20px;
+                margin-bottom: 20px;
+                border: 1px solid var(--border-color);
+                transition: background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
+            }
+
+            .card-title {
+                font-size: 1.4rem;
+                margin-bottom: 15px;
+                color: var(--secondary-color);
+                border-bottom: 2px solid var(--accent-color);
+                padding-bottom: 10px;
+            }
+
+            .input-group {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+
+            .button-group {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-top: 15px;
+            }
+
+            .button-group button {
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            h2 {
+                font-size: 1.3rem;
+            }
+
+            .card, .results, .query-section, .instructions {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Tree Path Finder</h1>
+    </header>
+    <div class="container">
+        <div class="canvas-container">
+            <div class="mode-indicator" id="modeIndicator"></div>
+            <canvas id="treeCanvas" width="800" height="600"></canvas>
+            <div class="zoom-controls">
+                <div class="zoom-btn" id="zoomIn">+</div>
+                <div class="zoom-level" id="zoomLevel">100%</div>
+                <div class="zoom-btn" id="zoomOut">-</div>
+                <div class="zoom-btn" id="resetView">⟲</div>
+            </div>
+            <div class="controls-toggle" id="controlsToggle">
+                <div class="hamburger-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            
+            <div class="controls-panel" id="controlsPanel" style="display: none;">
+                <div class="control-btn" id="mobileAddNode" title="Add Node">N+</div>
+                <div class="control-btn" id="mobileConnectNodes" title="Connect Nodes">C+</div>
+                <div class="control-btn" id="mobileEditNode" title="Edit Node">E</div>
+                <div class="control-btn" id="mobileDeleteNode" title="Delete Node">🗑️</div>
+                <div class="control-btn" id="mobileClearCanvas" title="Clear Canvas">🧹</div>
+                <div class="control-btn" id="mobileAnalyzeTree" title="Analyze Tree">📊</div>
+            </div>
+        </div>
+        <div class="controls">
+            <!-- <div class="instructions">
+                <h3>How to Use:</h3>
+                <ol>
+                    <li>Click/tap "Add Node" to add a new node</li>
+                    <li>Click/tap "Connect Nodes" to connect nodes (select parent first, then child)</li>
+                    <li>Click/tap a node to select it</li>
+                    <li>Use "Edit Node" to rename selected node</li>
+                    <li>Use "Delete Node" to remove selected node</li>
+                    <li>Click "Analyze Tree" to see the tree structure</li>
+                </ol>
+            </div> -->
+            <h2>Controls</h2>
+            <button class="button" id="addNode">Add Node</button>
+            <button class="button" id="connectNodes">Connect Nodes</button>
+            <button class="button" id="editNode">Edit Node</button>
+            <button class="button" id="deleteNode">Delete Node</button>
+            <button class="button" id="clearCanvas">Clear Canvas</button>
+            <button class="button" id="analyzeTree">Analyze Tree</button>
+
+            <div class="results" id="results">
+                <h3>Analysis Results</h3>
+                <div id="analysisResults"></div>
+            </div>
+
+            <div class="query-section">
+                <h3>Custom Query</h3>
+                <input type="text" class="query-input" id="queryInput" placeholder="Enter your question about the tree...">
+                <button class="query-button" id="runQuery">Run Query</button>
+                <div class="query-examples">
+                    <p>Example queries:</p>
+                    <ul>
+                        <li>parent of nodes b, c</li>
+                        <li>Which nodes are the children of node c?</li>
+                        <li>What is the depth of node a?</li>
+                        <li>What is the height of the tree?</li>
+                        <li>Show tree in list notation with node c as root</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">Navigation</h2>
+            <div class="button-group">
+                <button onclick="window.location.href='Undirected Path Finder.html'">Undirected Path Finder</button>
+                <button onclick="window.location.href='Directed Path Finder.html'">Directed Path Finder</button>
+                <button onclick="window.location.href='Fleury_s Algorithm Path Finder.html'">Fluery's Algorithm Path Finder</button>
+                <button onclick="window.location.href='Tree Path Finder.html'">Tree Path Finder</button>
+                <button onclick="window.location.href='Kruskal_s Path Finder.html'">Kruskal's Path Finder</button>
+                <button onclick="window.location.href='Huffman Algorithm Visualizer.html'">Huffman Algorithm Visualizer</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Tree data structure
+        class TreeNode {
+            constructor(name, x, y) {
+                this.name = name;
+                this.x = x;
+                this.y = y;
+                this.children = [];
+                this.parent = null;
+            }
+        }
+
+        class Tree {
+            constructor() {
+                this.nodes = [];
+                this.selectedNode = null;
+                this.connecting = false;
+            }
+
+            addNode(name, x, y) {
+                const node = new TreeNode(name, x, y);
+                this.nodes.push(node);
+                return node;
+            }
+
+            connectNodes(parent, child) {
+                if (parent && child && parent !== child) {
+                    if (child.parent) {
+                        const index = child.parent.children.indexOf(child);
+                        if (index !== -1) {
+                            child.parent.children.splice(index, 1);
+                        }
+                    }
+                    child.parent = parent;
+                    parent.children.push(child);
+                }
+            }
+
+            deleteNode(node) {
+                if (!node) return;
+                
+                if (node.parent) {
+                    const index = node.parent.children.indexOf(node);
+                    if (index !== -1) {
+                        node.parent.children.splice(index, 1);
+                    }
+                }
+                
+                const children = [...node.children];
+                children.forEach(child => this.deleteNode(child));
+                
+                this.nodes = this.nodes.filter(n => n !== node);
+            }
+
+            getRoot() {
+                return this.nodes.find(node => !node.parent);
+            }
+
+            getDepth(node) {
+                if (!node) return 0;
+                let depth = 0;
+                while (node.parent) {
+                    depth++;
+                    node = node.parent;
+                }
+                return depth;
+            }
+
+            getHeight(node) {
+                if (!node) return 0;
+                if (node.children.length === 0) return 0;
+                return 1 + Math.max(...node.children.map(child => this.getHeight(child)));
+            }
+
+            getTreeHeight() {
+                const root = this.getRoot();
+                return this.getHeight(root);
+            }
+
+            getListNotation(root) {
+                if (!root) return '';
+                if (root.children.length === 0) return root.name;
+                return `${root.name}(${root.children.map(child => this.getListNotation(child)).join(',')})`;
+            }
+
+            findParentOfNodes(nodeNames) {
+                return this.nodes.find(node => 
+                    node.children.some(child => nodeNames.includes(child.name))
+                );
+            }
+
+            findParentOfMultipleNodes(nodeNames) {
+                return this.nodes.find(node => 
+                    nodeNames.every(name => 
+                        node.children.some(child => child.name === name)
+                    )
+                );
+            }
+
+            getChildrenOfNode(nodeName) {
+                const node = this.nodes.find(n => n.name === nodeName);
+                return node ? node.children.map(c => c.name) : [];
+            }
+
+            getNodeDepth(nodeName) {
+                const node = this.nodes.find(n => n.name === nodeName);
+                return node ? this.getDepth(node) : -1;
+            }
+
+            getListNotationWithRoot(rootName) {
+                const root = this.nodes.find(n => n.name === rootName);
+                return root ? this.getListNotation(root) : 'Node not found';
+            }
+        }
+
+        const canvas = document.getElementById('treeCanvas');
+        const ctx = canvas.getContext('2d');
+        const tree = new Tree();
+        let isAddingNode = false;
+        
+        // Variables for zoom and pan functionality
+        let zoomLevel = 1;
+        let panX = 0;
+        let panY = 0;
+        let isDragging = false;
+        let lastX = 0;
+        let lastY = 0;
+        const modeIndicator = document.getElementById('modeIndicator');
+
+        // Touch handling variables
+        let touchStartX = 0;
+        let touchStartY = 0;
+        const touchThreshold = 10;
+
+        // Dark mode detection
+        function setColorMode() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        // Listen for system color scheme changes
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                drawTree(); // Redraw tree with new color scheme
+            });
+        }
+
+        function adjustCanvasSize() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth - 40; // Account for padding
+            canvas.height = container.clientHeight - 40; // Account for padding
+            drawTree();
+        }
+
+        function updateModeIndicator() {
+            if (isAddingNode) {
+                modeIndicator.textContent = "Mode: Adding Node";
+                modeIndicator.style.display = "block";
+            } else if (tree.connecting) {
+                modeIndicator.textContent = "Mode: Connecting Nodes";
+                modeIndicator.style.display = "block";
+            } else {
+                modeIndicator.style.display = "none";
+            }
+        }
+
+        function handleTouchStart(e) {
+            // Only prevent default if not touching a button
+            if (!e.target.closest('.zoom-btn') && !e.target.closest('.zoom-level')) {
+                e.preventDefault(); // Prevent scrolling when touching the canvas
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    lastX = touch.clientX - rect.left;
+                    lastY = touch.clientY - rect.top;
+                    touchStartX = lastX;
+                    touchStartY = lastY;
+                    
+                    // If not in node adding or connecting mode, enable dragging
+                    if (!isAddingNode && !tree.connecting) {
+                        isDragging = true;
+                    }
+                }
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (!e.target.closest('.zoom-btn') && !e.target.closest('.zoom-level')) {
+                e.preventDefault();
+                
+                // If we were dragging, stop dragging and don't trigger node interaction
+                if (isDragging && (Math.abs(lastX - touchStartX) > touchThreshold || Math.abs(lastY - touchStartY) > touchThreshold)) {
+                    isDragging = false;
+                    return;
+                }
+                
+                const touch = e.changedTouches[0];
+                const rect = canvas.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                
+                // Handle the touch as a click
+                handleCanvasInteraction(x, y);
+            }
+            
+            isDragging = false;
+        }
+
+        function handleCanvasInteraction(x, y) {
+            // Apply inverse transformation to get the actual coordinates in the unzoomed/unpanned canvas
+            const transformedX = (x - panX) / zoomLevel;
+            const transformedY = (y - panY) / zoomLevel;
+            
+            if (isAddingNode) {
+                const name = prompt('Enter node name:');
+                if (name) {
+                    const newNode = tree.addNode(name, transformedX, transformedY);
+                    if (tree.selectedNode) {
+                        tree.connectNodes(tree.selectedNode, newNode);
+                    }
+                    isAddingNode = false;
+                    updateModeIndicator();
+                    drawTree();
+                }
+            } else if (tree.connecting) {
+                const clickedNode = findNodeAt(x, y);
+                if (clickedNode) {
+                    if (!tree.selectedNode) {
+                        tree.selectedNode = clickedNode;
+                        showTouchFeedback(x, y);
+                        drawTree(); // Redraw to show the selected node in green
+                    } else {
+                        tree.connectNodes(tree.selectedNode, clickedNode);
+                        tree.selectedNode = null;
+                        tree.connecting = false;
+                        updateModeIndicator();
+                        drawTree();
+                    }
+                }
+            } else {
+                const clickedNode = findNodeAt(x, y);
+                if (clickedNode) {
+                    tree.selectedNode = clickedNode;
+                    showTouchFeedback(x, y);
+                    drawTree(); // Redraw to show the selected node in green
+                } else {
+                    // If clicking on empty space, deselect the current node
+                    if (tree.selectedNode) {
+                        tree.selectedNode = null;
+                        drawTree();
+                    }
+                }
+            }
+        }
+
+        function showTouchFeedback(x, y) {
+            // Create a visual feedback element for touch/click
+            const feedback = document.createElement('div');
+            feedback.className = 'node-touch-area';
+            
+            // Apply the same transformations as the canvas to position the feedback correctly
+            const transformedX = x;
+            const transformedY = y;
+            
+            feedback.style.left = `${transformedX}px`;
+            feedback.style.top = `${transformedY}px`;
+            feedback.style.transform = `translate(-50%, -50%)`;
+            feedback.style.display = 'block';
+            feedback.style.position = 'absolute';
+            feedback.style.width = '40px';
+            feedback.style.height = '40px';
+            feedback.style.borderRadius = '50%';
+            feedback.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+            feedback.style.border = '2px solid rgba(76, 175, 80, 0.6)';
+            feedback.style.zIndex = '100';
+            feedback.style.pointerEvents = 'none';
+            
+            canvas.parentElement.appendChild(feedback);
+
+            setTimeout(() => {
+                feedback.remove();
+            }, 300);
+        }
+
+        function findNodeAt(x, y) {
+            // Apply inverse transformation to get the actual coordinates in the zoomed/panned canvas
+            const transformedX = (x - panX) / zoomLevel;
+            const transformedY = (y - panY) / zoomLevel;
+            
+            // Use a larger touch radius on mobile devices for easier selection
+            const touchRadius = window.innerWidth <= 768 ? 40 : 25;
+            
+            return tree.nodes.find(node => {
+                const dx = node.x - transformedX;
+                const dy = node.y - transformedY;
+                return Math.sqrt(dx * dx + dy * dy) < touchRadius;
+            });
+        }
+
+        function drawTree() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Save the current context state
+            ctx.save();
+            
+            // Apply zoom and pan transformations
+            ctx.translate(panX, panY);
+            ctx.scale(zoomLevel, zoomLevel);
+            
+            // Use appropriate colors based on dark/light mode
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            const lineColor = isDarkMode ? '#aaa' : '#666';
+            const nodeFillColor = isDarkMode ? '#444' : '#fff';
+            const nodeSelectedColor = isDarkMode ? '#6BCB6F' : '#4CAF50';
+            const nodeTextColor = isDarkMode ? '#fff' : '#000';
+            const nodeStrokeColor = isDarkMode ? '#ccc' : '#000';
+            
+            // Draw edges between nodes
+            ctx.lineWidth = (window.innerWidth <= 768 ? 3 : 2) / zoomLevel;
+            tree.nodes.forEach(node => {
+                node.children.forEach(child => {
+                    ctx.beginPath();
+                    ctx.moveTo(node.x, node.y);
+                    ctx.lineTo(child.x, child.y);
+                    ctx.strokeStyle = lineColor;
+                    ctx.stroke();
+                });
+            });
+
+            // Draw nodes
+            const baseNodeRadius = window.innerWidth <= 768 ? 25 : 20;
+            const nodeRadius = baseNodeRadius / zoomLevel;
+            
+            tree.nodes.forEach(node => {
+                // Draw node circle
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2);
+                ctx.fillStyle = tree.selectedNode === node ? nodeSelectedColor : nodeFillColor;
+                ctx.fill();
+                ctx.strokeStyle = nodeStrokeColor;
+                ctx.lineWidth = (window.innerWidth <= 768 ? 3 : 2) / zoomLevel;
+                ctx.stroke();
+                
+                // Draw node text
+                ctx.fillStyle = nodeTextColor;
+                const fontSize = (window.innerWidth <= 768 ? 16 : 14) / zoomLevel;
+                ctx.font = `${fontSize}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.name, node.x, node.y);
+            });
+            
+            // Restore the context state
+            ctx.restore();
+        }
+
+        // Toggle controls panel
+        document.getElementById('controlsToggle').addEventListener('click', () => {
+            const panel = document.getElementById('controlsPanel');
+            const hamburger = document.querySelector('.hamburger-icon');
+            
+            if (panel.style.display === 'none') {
+                panel.style.display = 'flex';
+                hamburger.classList.add('open');
+            } else {
+                panel.style.display = 'none';
+                hamburger.classList.remove('open');
+            }
+        });
+        
+        // Mobile controls
+        document.getElementById('mobileAddNode').addEventListener('click', () => {
+            isAddingNode = true;
+            tree.connecting = false;
+            canvas.style.cursor = 'crosshair';
+            updateModeIndicator();
+        });
+        
+        document.getElementById('mobileConnectNodes').addEventListener('click', () => {
+            tree.connecting = true;
+            isAddingNode = false;
+            canvas.style.cursor = 'pointer';
+            updateModeIndicator();
+        });
+        
+        document.getElementById('mobileEditNode').addEventListener('click', () => {
+            if (tree.selectedNode) {
+                const newName = prompt('Enter new node name:', tree.selectedNode.name);
+                if (newName && newName.trim()) {
+                    tree.selectedNode.name = newName.trim();
+                    drawTree();
+                }
+            } else {
+                alert('Please select a node first.');
+            }
+        });
+        
+        document.getElementById('mobileDeleteNode').addEventListener('click', () => {
+            if (tree.selectedNode) {
+                if (confirm(`Are you sure you want to delete node '${tree.selectedNode.name}' and all its children?`)) {
+                    tree.deleteNode(tree.selectedNode);
+                    tree.selectedNode = null;
+                    drawTree();
+                }
+            } else {
+                alert('Please select a node first.');
+            }
+        });
+        
+        document.getElementById('mobileClearCanvas').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear the canvas? This will delete all nodes.')) {
+                tree.nodes = [];
+                tree.selectedNode = null;
+                tree.connecting = false;
+                isAddingNode = false;
+                drawTree();
+                document.getElementById('analysisResults').innerHTML = '';
+            }
+        });
+        
+        document.getElementById('mobileAnalyzeTree').addEventListener('click', () => {
+            analyzeTree();
+        });
+        
+        // Event Listeners
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        canvas.addEventListener('click', (e) => {
+            if (!isDragging) { // Only handle click if we're not dragging
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                handleCanvasInteraction(x, y);
+            }
+        });
+        
+        // Mouse events for panning
+        canvas.addEventListener('mousedown', (e) => {
+            if (!isAddingNode && !tree.connecting && !e.target.closest('.zoom-btn') && !e.target.closest('.zoom-level')) {
+                isDragging = true;
+                lastX = e.clientX - canvas.getBoundingClientRect().left;
+                lastY = e.clientY - canvas.getBoundingClientRect().top;
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const x = e.clientX - canvas.getBoundingClientRect().left;
+                const y = e.clientY - canvas.getBoundingClientRect().top;
+                const deltaX = x - lastX;
+                const deltaY = y - lastY;
+                panX += deltaX;
+                panY += deltaY;
+                lastX = x;
+                lastY = y;
+                drawTree();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            if (!isAddingNode && !tree.connecting) {
+                canvas.style.cursor = 'move';
+            }
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            if (!isAddingNode && !tree.connecting) {
+                canvas.style.cursor = 'move';
+            }
+        });
+        
+        // Touch events for panning
+        canvas.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const x = touch.clientX - canvas.getBoundingClientRect().left;
+                const y = touch.clientY - canvas.getBoundingClientRect().top;
+                const deltaX = x - lastX;
+                const deltaY = y - lastY;
+                panX += deltaX;
+                panY += deltaY;
+                lastX = x;
+                lastY = y;
+                drawTree();
+                
+                // If the user has moved significantly, mark as a drag operation
+                if (Math.abs(x - touchStartX) > touchThreshold || Math.abs(y - touchStartY) > touchThreshold) {
+                    isDragging = true;
+                }
+            }
+        }, { passive: false });
+        
+        // Zoom controls
+        document.getElementById('zoomIn').addEventListener('click', (e) => {
+            e.preventDefault();
+            zoomLevel = Math.min(zoomLevel * 1.2, 5);
+            document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+            drawTree();
+        });
+        
+        document.getElementById('zoomIn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            zoomLevel = Math.min(zoomLevel * 1.2, 5);
+            document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+            drawTree();
+        }, { passive: false });
+        
+        document.getElementById('zoomOut').addEventListener('click', (e) => {
+            e.preventDefault();
+            zoomLevel = Math.max(zoomLevel / 1.2, 0.2);
+            document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+            drawTree();
+        });
+        
+        document.getElementById('zoomOut').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            zoomLevel = Math.max(zoomLevel / 1.2, 0.2);
+            document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+            drawTree();
+        }, { passive: false });
+        
+        document.getElementById('resetView').addEventListener('click', (e) => {
+            e.preventDefault();
+            zoomLevel = 1;
+            panX = 0;
+            panY = 0;
+            document.getElementById('zoomLevel').textContent = '100%';
+            drawTree();
+        });
+        
+        document.getElementById('resetView').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            zoomLevel = 1;
+            panX = 0;
+            panY = 0;
+            document.getElementById('zoomLevel').textContent = '100%';
+            drawTree();
+        }, { passive: false });
+
+        document.getElementById('addNode').addEventListener('click', () => {
+            isAddingNode = true;
+            tree.connecting = false;
+            canvas.style.cursor = 'crosshair';
+            updateModeIndicator();
+        });
+
+        document.getElementById('connectNodes').addEventListener('click', () => {
+            tree.connecting = true;
+            isAddingNode = false;
+            canvas.style.cursor = 'pointer';
+            updateModeIndicator();
+        });
+
+        document.getElementById('editNode').addEventListener('click', () => {
+            if (tree.selectedNode) {
+                const newName = prompt('Enter new node name:', tree.selectedNode.name);
+                if (newName) {
+                    tree.selectedNode.name = newName;
+                    drawTree();
+                }
+            } else {
+                alert('Please select a node first by clicking/tapping on it');
+            }
+        });
+
+        document.getElementById('deleteNode').addEventListener('click', () => {
+            if (tree.selectedNode) {
+                if (confirm('Are you sure you want to delete this node and all its children?')) {
+                    tree.deleteNode(tree.selectedNode);
+                    tree.selectedNode = null;
+                    drawTree();
+                }
+            } else {
+                alert('Please select a node first by clicking/tapping on it');
+            }
+        });
+
+        document.getElementById('clearCanvas').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear the entire tree?')) {
+                tree.nodes = [];
+                tree.selectedNode = null;
+                tree.connecting = false;
+                isAddingNode = false;
+                updateModeIndicator();
+                drawTree();
+            }
+        });
+
+        document.getElementById('analyzeTree').addEventListener('click', () => {
+            analyzeTree();
+        });
+
+        function analyzeTree() {
+            const results = document.getElementById('analysisResults');
+            const root = tree.getRoot();
+            
+            let analysis = '';
+            if (root) {
+                analysis += `<p>1. Root node: ${root.name}</p>`;
+                analysis += `<p>2. Children of c: ${tree.nodes.find(n => n.name === 'c')?.children.map(c => c.name).join(', ') || 'None'}</p>`;
+                analysis += `<p>3. Parent of f and g: ${tree.findParentOfNodes(['f', 'g'])?.name || 'None'}</p>`;
+                analysis += `<p>4. Depth of d: ${tree.getDepth(tree.nodes.find(n => n.name === 'd'))}</p>`;
+                analysis += `<p>5. Tree height: ${tree.getTreeHeight()}</p>`;
+                analysis += `<p>6. List notation (c as root): ${tree.getListNotation(tree.nodes.find(n => n.name === 'c'))}</p>`;
+            } else {
+                analysis = '<p>No tree structure found. Please add nodes and connect them.</p>';
+            }
+            
+            results.innerHTML = analysis;
+        }
+
+        function analyzeQuery(query) {
+            query = query.toLowerCase();
+            const results = document.getElementById('analysisResults');
+            let answer = '';
+
+            if (query.includes('parent of nodes')) {
+                const nodeNames = query.match(/nodes?\s+([a-z0-9,\s]+)/i)[1].split(/[,\s]+/).filter(Boolean);
+                const parent = tree.findParentOfMultipleNodes(nodeNames);
+                answer = parent ? 
+                    `The parent of nodes ${nodeNames.join(', ')} is: ${parent.name}` :
+                    `No single parent found for nodes ${nodeNames.join(', ')}`;
+            }
+            else if (query.includes('children of node')) {
+                const nodeName = query.match(/node\s+([a-z0-9]+)/i)[1];
+                const children = tree.getChildrenOfNode(nodeName);
+                answer = children.length > 0 ?
+                    `The children of node ${nodeName} are: ${children.join(', ')}` :
+                    `Node ${nodeName} has no children`;
+            }
+            else if (query.includes('depth of node')) {
+                const nodeName = query.match(/node\s+([a-z0-9]+)/i)[1];
+                const depth = tree.getNodeDepth(nodeName);
+                answer = depth >= 0 ?
+                    `The depth of node ${nodeName} is: ${depth}` :
+                    `Node ${nodeName} not found`;
+            }
+            else if (query.includes('height of the tree')) {
+                answer = `The height of the tree is: ${tree.getTreeHeight()}`;
+            }
+            else if (query.includes('list notation') && query.includes('root')) {
+                const match = query.match(/node\s+([a-z0-9]+)\s+as/i);
+                if (match) {
+                    const rootName = match[1];
+                    answer = `Tree in list notation with ${rootName} as root: ${tree.getListNotationWithRoot(rootName)}`;
+                } else {
+                    answer = 'Please specify a valid node name';
+                }
+            }
+            else {
+                answer = 'Sorry, I don\'t understand that query. Please try one of the example queries.';
+            }
+
+            results.innerHTML = `<p>${answer}</p>`;
+        }
+
+        document.getElementById('runQuery').addEventListener('click', () => {
+            const query = document.getElementById('queryInput').value.trim();
+            if (query) {
+                analyzeQuery(query);
+            } else {
+                alert('Please enter a query');
+            }
+        });
+
+        document.getElementById('queryInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = document.getElementById('queryInput').value.trim();
+                if (query) {
+                    analyzeQuery(query);
+                }
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            adjustCanvasSize();
+            drawTree();
+        });
+
+        // Initialize
+        setColorMode();
+        adjustCanvasSize();
+        const defaultNode = tree.addNode("Root", canvas.width / 2, canvas.height / 2);
+        drawTree();
+    </script>
+</body>
+</html>
