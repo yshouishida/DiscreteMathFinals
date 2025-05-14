@@ -979,6 +979,7 @@
         // Generate a unique vertex ID (A, B, C, etc.)
         const existingIds = graph.getVertexIds();
         let newId = '';
+        let newEdgeName = '';
         for (let charCode = 65; charCode <= 90; charCode++) {
           const id = String.fromCharCode(charCode);
           if (!existingIds.includes(id)) {
@@ -986,12 +987,23 @@
             break;
           }
         }
+
+        // Find the highest numeric edge name and increment by 1
+        let highestNum = 0;
+        for (const edge of graph.edges) {
+          if (edge.name && /^\d+$/.test(edge.name)) {
+            const num = parseInt(edge.name, 10);
+            if (num > highestNum) {
+              highestNum = num;
+            }
+          }
+        }
+        newEdgeName = String(highestNum + 1);
         
         if (newId) {
           // Prompt for vertex name
           const name = prompt('Enter vertex name (or leave empty to use default):', newId);
           const vertexId = name && name.trim() ? name.trim() : newId;
-          
           // Check if the ID is already in use
           if (vertexId !== newId && graph.vertices.has(vertexId)) {
             alert('This vertex ID is already in use. Please choose another one.');
@@ -1004,7 +1016,7 @@
           // If a vertex is already selected, connect the new vertex to it
           if (graph.selectedVertex) {
             // Prompt for edge name
-            const edgeName = prompt('Enter edge name:', 'a');
+            const edgeName = prompt('Enter edge name:', newEdgeName);
             
             if (edgeName && edgeName.trim()) {
               // Add the edge
