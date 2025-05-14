@@ -852,25 +852,115 @@ n12(
         class PriorityQueue {
             constructor() {
                 this.items = [];
+                this.initialOrder = true; // Flag to track if we're in initial frequency table state
             }
 
             enqueue(node) {
-                let added = false;
-                for (let i = 0; i < this.items.length; i++) {
-                    if (node.freq < this.items[i].freq) {
-                        this.items.splice(i, 0, node);
-                        added = true;
-                        break;
-                    }
-                }
-                if (!added) {
+                // If this is a node (N1, N2, etc.), always add to the end
+                if (node.name.startsWith('N') && node.name !== 'N') {
                     this.items.push(node);
+                    return this;
+                }
+                
+                // For the initial frequency table, maintain alphabetical order
+                if (this.initialOrder) {
+                    // Insert in alphabetical order
+                    let inserted = false;
+                    for (let i = 0; i < this.items.length; i++) {
+                        if (node.name.localeCompare(this.items[i].name) < 0) {
+                            this.items.splice(i, 0, node);
+                            inserted = true;
+                            break;
+                        }
+                    }
+                    if (!inserted) {
+                        this.items.push(node);
+                    }
+                } else {
+                    // After initial state, insert by frequency
+                    let inserted = false;
+                    for (let i = 0; i < this.items.length; i++) {
+                        // Skip nodes when inserting regular characters
+                        if (this.items[i].name.startsWith('N') && this.items[i].name !== 'N') {
+                            continue;
+                        }
+                        
+                        if (node.freq < this.items[i].freq) {
+                            this.items.splice(i, 0, node);
+                            inserted = true;
+                            break;
+                        }
+                    }
+                    if (!inserted) {
+                        // Find position before first node
+                        let pos = this.items.length;
+                        for (let i = 0; i < this.items.length; i++) {
+                            if (this.items[i].name.startsWith('N') && this.items[i].name !== 'N') {
+                                pos = i;
+                                break;
+                            }
+                        }
+                        this.items.splice(pos, 0, node);
+                    }
                 }
                 return this;
             }
 
             dequeue() {
-                return this.items.shift();
+                // Find the item with the lowest frequency
+                if (this.items.length === 0) return null;
+                
+                let minFreq = Infinity;
+                let minIndex = 0;
+                
+                // First, find the minimum frequency
+                for (let i = 0; i < this.items.length; i++) {
+                    if (this.items[i].freq < minFreq) {
+                        minFreq = this.items[i].freq;
+                        minIndex = i;
+                    }
+                }
+                
+                // Now find all items with this minimum frequency
+                const minFreqItems = [];
+                for (let i = 0; i < this.items.length; i++) {
+                    if (this.items[i].freq === minFreq) {
+                        minFreqItems.push(i);
+                    }
+                }
+                
+                // If there's only one item with the minimum frequency, dequeue it
+                if (minFreqItems.length === 1) {
+                    return this.items.splice(minFreqItems[0], 1)[0];
+                }
+                
+                // If there are multiple items with the same minimum frequency,
+                // separate regular characters from nodes
+                const regularItems = [];
+                const nodeItems = [];
+                
+                for (const idx of minFreqItems) {
+                    if (this.items[idx].name.startsWith('N') && this.items[idx].name !== 'N') {
+                        nodeItems.push(idx);
+                    } else {
+                        regularItems.push(idx);
+                    }
+                }
+                
+                // If there are regular characters with the minimum frequency, dequeue the first one
+                // (this maintains the original order since we're not sorting)
+                if (regularItems.length > 0) {
+                    return this.items.splice(regularItems[0], 1)[0];
+                }
+                
+                // Otherwise, dequeue the first node with the minimum frequency
+                // Sort nodes by their number (N1, N2, etc.)
+                nodeItems.sort((a, b) => {
+                    const numA = parseInt(this.items[a].name.substring(1));
+                    const numB = parseInt(this.items[b].name.substring(1));
+                    return numA - numB;
+                });
+                return this.items.splice(nodeItems[0], 1)[0];
             }
 
             peek() {
@@ -925,7 +1015,7 @@ n12(
             // Display frequency table
             const freqArray = Object.entries(frequency)
                 .map(([char, freq]) => [char.toUpperCase(), freq])
-                .sort((a, b) => a[0].localeCompare(b[0]));
+                .sort((a, b) => a[0].localeCompare(b[0])); // Sort alphabetically
             
             if (freqArray.length === 0) {
                 alert('No valid characters found in the input text.');
@@ -1032,6 +1122,9 @@ n3(
             for (const [char, freq] of freqArray) {
                 pq.enqueue(new HuffmanNode(char, freq, null, null, char.toLowerCase()));
             }
+            
+            // After initial frequency table is created, set initialOrder to false
+            pq.initialOrder = false;
 
             // Handle edge case of only one unique character
             if (pq.size() === 1) {
@@ -1049,13 +1142,7 @@ n3(
             
             // Build the tree
             while (pq.size() > 1) {
-                // Sort by frequency, then by name if frequencies are equal
-                pq.items.sort((a, b) => {
-                    if (a.freq === b.freq) {
-                        return a.name.localeCompare(b.name);
-                    }
-                    return a.freq - b.freq;
-                });
+                // No sorting needed here - we want to preserve the original order
                 
                 const left = pq.dequeue();
                 const right = pq.dequeue();
