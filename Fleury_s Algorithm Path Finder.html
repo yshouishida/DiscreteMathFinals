@@ -509,7 +509,7 @@
         </div>
       </div>
 
-      <div class="controls" >
+      <div class="controls" style="display: none;" >
         <h2>Controls</h2>
         <button class="button" id="addVertex">Add Vertex</button>
         <button class="button" id="addEdge">Add Edge</button>
@@ -1080,7 +1080,7 @@
             }
             
             // Update all edges that reference this vertex
-            for (const edge of graph.edges) {
+            for (const edge of graph.edges) { 
               if (edge.from === clickedVertex.id) {
                 edge.from = newId;
               }
@@ -1114,14 +1114,13 @@
           
           const { edge, index } = edgeInfo;
           
-          // Show edit form instead of prompt
-          document.getElementById('editForm').style.display = 'block';
-          document.getElementById('editFrom').value = edge.from;
-          document.getElementById('editTo').value = edge.to;
-          document.getElementById('editName').value = edge.name || '';
-          
-          // Store the current editing edge index
-          currentEditingEdge = index;
+          // Prompt for edge name only
+          const newName = prompt('Enter edge name:', edge.name || '');
+          if (newName !== null) { // User didn't cancel
+            // Update only the edge name
+            edge.name = newName.trim();
+            drawGraph();
+          }
           
           isEditingEdge = false;
           updateModeIndicator();
